@@ -118,7 +118,7 @@ import { IconComponent } from '../icon/icon.component';
         </div>
 
         <!-- RIGHT COLUMN: Shopify POS Cart & Checkout Sidebar -->
-        <div class="lg:col-span-5 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+        <div id="posCartSidebar" class="lg:col-span-5 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
           
           <!-- Cart Header -->
           <div class="flex items-center justify-between font-bold text-slate-900 dark:text-white font-heading text-sm border-b border-slate-100 dark:border-slate-800 pb-2.5">
@@ -307,6 +307,20 @@ import { IconComponent } from '../icon/icon.component';
 
       </div>
     </div>
+    <!-- Sticky Mobile Floating Cart Bar (Visible on mobile screens when cart has items) -->
+    <div *ngIf="cart.length > 0" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 border-t border-slate-800 shadow-2xl flex items-center justify-between gap-3">
+      <div>
+        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ getCartTotalQty() }} {{ getCartTotalQty() === 1 ? 'item' : 'items' }} in sale</div>
+        <div class="text-sm font-black font-mono text-emerald-400">Total: Rp {{ getTotalPay().toLocaleString('id-ID') }}</div>
+      </div>
+      <button
+        (click)="scrollToCart()"
+        class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
+      >
+        <span>View Cart & Pay →</span>
+      </button>
+    </div>
+
   `
 })
 export class PosCheckoutComponent implements OnInit {
@@ -607,6 +621,15 @@ export class PosCheckoutComponent implements OnInit {
     const clean = p.name.trim().replace(/^CV\.\s*/i, '');
     const firstWord = clean.split(/[\s\-_\/:]+/)[0];
     return firstWord ? firstWord.toUpperCase() : 'BEAUTY';
+  }
+
+  public scrollToCart() {
+    if (typeof document !== 'undefined') {
+      const element = document.getElementById('posCartSidebar');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   }
 
   public getCurrentUser() {
