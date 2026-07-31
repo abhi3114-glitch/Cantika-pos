@@ -1,0 +1,15 @@
+export { HeaderComponent as HeaderView } from '../components/header/header.component';
+export { AdminPosComponent as AdminPosView } from '../components/admin-pos/admin-pos.component';
+export { PosCheckoutComponent as PosCheckoutView } from '../components/pos-checkout/pos-checkout.component';
+export { EditProductModalComponent as EditProductModalView } from '../components/edit-product-modal/edit-product-modal.component';
+export { AddProductModalComponent as AddProductModalView } from '../components/add-product-modal/add-product-modal.component';
+export { RestockModalComponent as RestockModalView } from '../components/restock-modal/restock-modal.component';
+export { RestockDetailModalComponent as RestockDetailModalView } from '../components/restock-detail-modal/restock-detail-modal.component';
+export { NotificationDrawerComponent as NotificationDrawerView } from '../components/notification-drawer/notification-drawer.component';
+export { SecurityShieldModalComponent as SecurityShieldModalView } from '../components/security-shield-modal/security-shield-modal.component';
+export { PrintLabelModalComponent as PrintLabelModalView } from '../components/print-label-modal/print-label-modal.component';
+export { PurchaseOrderModalComponent as PurchaseOrderModalView } from '../components/purchase-order-modal/purchase-order-modal.component';
+export { CreateEmployeeModalComponent as CreateEmployeeModalView } from '../components/create-employee-modal/create-employee-modal.component';
+export { PosReceiptModalComponent as PosReceiptModalView } from '../components/pos-receipt-modal/pos-receipt-modal.component';
+export { CsvImportModalComponent as CsvImportModalView } from '../components/csv-import-modal/csv-import-modal.component';
+export { FooterComponent as FooterView } from '../components/footer/footer.component';
