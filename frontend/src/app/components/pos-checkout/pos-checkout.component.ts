@@ -144,7 +144,7 @@ import { IconComponent } from '../icon/icon.component';
                 <input
                   type="number"
                   min="1"
-                  [ngModel]="item.quantity"
+                  [(ngModel)]="item.quantity"
                   (ngModelChange)="setDirectQty(idx, $event)"
                   class="font-mono font-bold text-slate-900 dark:text-white w-11 text-center text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded py-0.5"
                 />
@@ -239,6 +239,7 @@ import { IconComponent } from '../icon/icon.component';
               <input
                 type="number"
                 [(ngModel)]="cashPaid"
+                (ngModelChange)="onCashInput($event)"
                 placeholder="Enter cash received (e.g. 50000)..."
                 class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-400 dark:border-emerald-700 rounded-xl text-sm font-mono font-black text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 shadow-xs"
               />
@@ -569,7 +570,17 @@ export class PosCheckoutComponent implements OnInit {
   }
 
   public getCashPaidNumber(): number {
-    return Math.max(0, Number(this.cashPaid) || 0);
+    if (this.cashPaid === null || this.cashPaid === undefined) return 0;
+    const num = Number(this.cashPaid);
+    return isNaN(num) ? 0 : Math.max(0, num);
+  }
+
+  public onCashInput(val: any) {
+    if (val === null || val === undefined || val === '') {
+      this.cashPaid = 0;
+    } else {
+      this.cashPaid = Math.max(0, Number(val) || 0);
+    }
   }
 
   public setPresetCashAmount(preset: number) {

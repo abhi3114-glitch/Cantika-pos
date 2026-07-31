@@ -32,6 +32,14 @@ function parseCSVLine(line) {
   return result;
 }
 
+function extractBrandName(name, rawVendor) {
+  if (rawVendor && rawVendor.trim()) return rawVendor.trim();
+  if (!name || !name.trim()) return 'BEAUTY';
+  const clean = name.trim().replace(/^CV\.\s*/i, '');
+  const firstWord = clean.split(/[\s\-_\/:]+/)[0];
+  return firstWord ? firstWord.toUpperCase() : 'BEAUTY';
+}
+
 const raw = fs.readFileSync(CSV_PATH, 'utf-8');
 const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
 
@@ -66,8 +74,9 @@ for (let i = 1; i < lines.length; i++) {
   const weight = parseFloat(weightRaw) || 0;
 
   const barcode = cols[idx['Barcode']] || sku;
-  const vendor = cols[idx['Vendor']] || '';
-  const type = cols[idx['Type']] || '';
+  const rawVendor = cols[idx['Vendor']] || '';
+  const vendor = extractBrandName(name, rawVendor);
+  const type = cols[idx['Type']] || vendor;
   const collection = cols[idx['Collections']] || type || '';
   const unit = cols[idx['UnitOfMeasurement']] || 'pcs';
   const weightUnit = cols[idx['ShippingUnit']] || 'kg';
@@ -101,7 +110,6 @@ for (let i = 1; i < lines.length; i++) {
     isActive
   };
 
-  // Only include optional fields if they have values to keep JSON lean
   if (description) product.description = description;
   if (images) product.images = images;
   if (tags) product.tags = tags;
