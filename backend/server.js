@@ -43,29 +43,29 @@ function extractBrandName(name, rawVendor) {
 // --- MONGOOSE SCHEMAS & MODELS ---
 const ProductSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true, index: true },
-  sku: { type: String, required: true, index: true },
-  barcode: { type: String, index: true },
-  name: { type: String, required: true, index: true },
-  vendor: { type: String, index: true },
-  type: { type: String },
+  sku: { type: String, default: '', index: true },
+  barcode: { type: String, default: '', index: true },
+  name: { type: String, default: 'Beauty Product', index: true },
+  vendor: { type: String, default: 'BEAUTY', index: true },
+  type: { type: String, default: '' },
   buyingPrice: { type: Number, default: 0 },
-  price: { type: Number, required: true },
+  price: { type: Number, default: 0 },
   stock: { type: Number, default: 0 },
   unit: { type: String, default: 'pcs' },
   weight: { type: Number, default: 0 },
   weightUnit: { type: String, default: 'kg' },
-  collectionName: { type: String },
+  collectionName: { type: String, default: '' },
   isActive: { type: Boolean, default: true }
-}, { timestamps: true });
+}, { timestamps: true, strict: false });
 
 const EmployeeSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
-  phone: { type: String, required: true },
-  password: { type: String, required: true },
+  name: { type: String, default: '' },
+  phone: { type: String, default: '' },
+  password: { type: String, default: '' },
   role: { type: String, default: 'employee' },
   createdAt: { type: String }
-}, { timestamps: true });
+}, { timestamps: true, strict: false });
 
 const RestockSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
@@ -76,7 +76,7 @@ const RestockSchema = new mongoose.Schema({
   totalAmountToPay: { type: Number, default: 0 },
   isPaid: { type: Boolean, default: false },
   deadlineDate: { type: String }
-}, { timestamps: true });
+}, { timestamps: true, strict: false });
 
 const AuditSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
@@ -90,7 +90,7 @@ const AuditSchema = new mongoose.Schema({
   fieldChanged: { type: String },
   oldValue: { type: String },
   newValue: { type: String }
-}, { timestamps: true });
+}, { timestamps: true, strict: false });
 
 const NotificationSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
@@ -99,7 +99,7 @@ const NotificationSchema = new mongoose.Schema({
   message: { type: String },
   timestamp: { type: String },
   read: { type: Boolean, default: false }
-}, { timestamps: true });
+}, { timestamps: true, strict: false });
 
 const MarginSchema = new mongoose.Schema({
   key: { type: String, default: 'global_margin', unique: true },
@@ -123,10 +123,12 @@ async function connectAndSeedDatabase() {
       isMongoConnected = true;
       console.log('🍃 CONNECTED TO MONGODB ATLAS CLOUD DATABASE!');
 
-      // Seed 5,182 products if MongoDB is empty or has invalid duplicates
+      // Check current item count in MongoDB
       const count = await ProductModel.countDocuments();
-      if (count < 1000) {
-        console.log('Seeding MongoDB Atlas with 5,182 products from assets...');
+      console.log(`[MONGO DB CHECK] Current product count in MongoDB Atlas: ${count}`);
+
+      if (count < 5000) {
+        console.log('Seeding MongoDB Atlas with all 5,182 products from assets...');
         const seedJsonPath = path.join(__dirname, '..', 'frontend', 'src', 'assets', 'products.json');
         if (fs.existsSync(seedJsonPath)) {
           const raw = fs.readFileSync(seedJsonPath, 'utf8');
@@ -135,28 +137,46 @@ async function connectAndSeedDatabase() {
           const cleanProducts = [];
 
           products.forEach((p, idx) => {
-            if (!p.vendor || !p.vendor.trim()) {
-              p.vendor = extractBrandName(p.name, p.vendor);
-            }
             let cleanId = p.id;
             if (!cleanId || cleanId === 'prod__' || seenIds.has(cleanId)) {
-              cleanId = `prod_${p.sku || p.barcode || idx}_${idx}`;
+              cleanId = `prod_${p.sku || p.barcode || idx}_${idx}_${Date.now()}`;
             }
             seenIds.add(cleanId);
-            p.id = cleanId;
-            cleanProducts.push(p);
+
+            cleanProducts.push({
+              id: cleanId,
+              sku: String(p.sku || p.barcode || `SKU-${idx + 1}`),
+              barcode: String(p.barcode || p.sku || ''),
+              name: String(p.name || 'Beauty Product'),
+              vendor: extractBrandName(p.name, p.vendor),
+              type: String(p.type || ''),
+              buyingPrice: Number(p.buyingPrice) || 0,
+              price: Number(p.price) || 0,
+              stock: Number(p.stock) || 0,
+              unit: String(p.unit || 'pcs'),
+              weight: Number(p.weight) || 0,
+              weightUnit: String(p.weightUnit || 'kg'),
+              collectionName: String(p.collectionName || ''),
+              isActive: p.isActive !== false
+            });
           });
 
-          try {
-            await ProductModel.deleteMany({});
-            await ProductModel.insertMany(cleanProducts, { ordered: false });
-            console.log(`✅ Successfully seeded ${cleanProducts.length} products to MongoDB Atlas!`);
-          } catch (seedErr) {
-            console.warn('MongoDB partial seed warning (proceeding with seeded items):', seedErr.message);
+          console.log(`Seeding all ${cleanProducts.length} normalized products into MongoDB Atlas...`);
+          await ProductModel.deleteMany({});
+          
+          // Insert in chunks of 1000 for maximum speed & stability
+          const chunkSize = 1000;
+          for (let i = 0; i < cleanProducts.length; i += chunkSize) {
+            const chunk = cleanProducts.slice(i, i + chunkSize);
+            await ProductModel.insertMany(chunk, { ordered: false });
+            console.log(`[MONGO SEED] Inserted batch ${Math.floor(i / chunkSize) + 1} (${chunk.length} products)`);
           }
+
+          const finalCount = await ProductModel.countDocuments();
+          console.log(`✅ MongoDB Atlas seeding complete! Total active products in Cloud: ${finalCount}`);
         }
       } else {
-        console.log(`🍃 MongoDB Atlas active with ${count} registered products.`);
+        console.log(`🍃 MongoDB Atlas active with all ${count} registered products.`);
       }
     } catch (err) {
       console.error('⚠️ MongoDB Connection Error, falling back to db.json:', err.message);
