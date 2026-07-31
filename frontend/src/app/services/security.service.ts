@@ -31,16 +31,15 @@ export class SecurityService {
         return url;
       }
     }
-    if (typeof window !== 'undefined' && (window as any).CANTIKA_API_URL) {
+    if (typeof window !== 'undefined' && (window as any).CANTIKA_API_URL && (window as any).CANTIKA_API_URL.trim()) {
       const raw = (window as any).CANTIKA_API_URL.trim().replace(/\/+$/, '');
       return raw.endsWith('/api') ? raw : raw + '/api';
     }
-    if (typeof window !== 'undefined' && window.location) {
+    if (typeof window !== 'undefined' && window.location && window.location.hostname) {
       const host = window.location.hostname;
-      if (host !== 'localhost' && !host.startsWith('192.168.') && !host.startsWith('127.0.0.') && !host.startsWith('10.')) {
-        return `${window.location.origin}/api`;
+      if (host === 'localhost' || host.startsWith('192.168.') || host.startsWith('127.0.0.') || host.startsWith('10.')) {
+        return `http://${host}:3000/api`;
       }
-      return `http://${host}:3000/api`;
     }
     return 'http://localhost:3000/api';
   }
