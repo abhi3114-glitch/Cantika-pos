@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node backend/server.js",
     "start:backend": "cd backend && npm start",
-    "start:frontend": "cd frontend && npx ng serve --port 4200",
+    "start:frontend": "cd frontend && npx ng serve --host 0.0.0.0 --port 4200",
     "build:frontend": "cd frontend && npx ng build --configuration production",
     "install:all": "cd backend && npm install && cd ../frontend && npm install"
   }

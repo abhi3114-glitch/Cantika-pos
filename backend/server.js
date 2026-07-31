@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -54,17 +55,6 @@ function initializeDB() {
 
   saveDB(initialDB);
   return initialDB;
-}
-
-function loadDB() {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    }
-  } catch (e) {
-    console.error('Error loading db.json:', e);
-  }
-  return initializeDB();
 }
 
 function saveDB(dbData) {
@@ -205,7 +195,6 @@ app.get('/api/notifications', (req, res) => {
 app.post('/api/notifications', (req, res) => {
   const notification = req.body;
   db.notifications.unshift(notification);
-  // Keep max 200 notifications
   if (db.notifications.length > 200) {
     db.notifications = db.notifications.slice(0, 200);
   }
@@ -225,11 +214,27 @@ app.post('/api/margin', (req, res) => {
   res.json({ success: true, margin: db.globalProfitMargin });
 });
 
-// Server Listen
-app.listen(PORT, () => {
+// Helper to get local IP address
+function getLocalIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const net of interfaces[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+const localIP = getLocalIP();
+
+// Server Listen on 0.0.0.0 for Mobile Phone Access
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`===================================================`);
   console.log(`Cantika POS Central Backend Server is running!`);
-  console.log(`URL: http://localhost:${PORT}`);
+  console.log(`Local Access: http://localhost:${PORT}`);
+  console.log(`Mobile Access: http://${localIP}:${PORT}`);
   console.log(`Database File: ${DB_FILE}`);
   console.log(`Total Active Products: ${db.products.length}`);
   console.log(`===================================================`);

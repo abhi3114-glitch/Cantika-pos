@@ -35,6 +35,10 @@ export class SecurityService {
       const raw = (window as any).CANTIKA_API_URL.trim().replace(/\/+$/, '');
       return raw.endsWith('/api') ? raw : raw + '/api';
     }
+    if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+      const host = window.location.hostname;
+      return `http://${host}:3000/api`;
+    }
     return 'http://localhost:3000/api';
   }
 
