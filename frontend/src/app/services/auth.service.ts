@@ -16,6 +16,10 @@ export class AuthService {
   private employeesSubject = new BehaviorSubject<EmployeeAccount[]>([]);
   public employees$ = this.employeesSubject.asObservable();
 
+  public getEmployees(): EmployeeAccount[] {
+    return this.employeesSubject.value;
+  }
+
   // Owner Default Credentials
   private ownerPhone = '081910195353';
   private ownerPassword = 'bunny1234';

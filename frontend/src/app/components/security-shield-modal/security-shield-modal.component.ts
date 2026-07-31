@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SecurityService } from '../../services/security.service';
 import { ProductService } from '../../services/product.service';
+import { AuthService } from '../../services/auth.service';
 import { RestockService } from '../../services/restock.service';
 import { AuditService } from '../../services/audit.service';
 import { NotificationService } from '../../services/notification.service';
@@ -27,7 +28,7 @@ import { IconComponent } from '../icon/icon.component';
                 Database Safeguard & Backup Vault
                 <span class="px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-mono rounded-md font-bold">TRIPLE SAFEGUARD</span>
               </h2>
-              <p class="text-xs text-slate-400 font-medium">Render Cloud Persistence, Auto Daily Snapshots & 1-Click Offline Backups</p>
+              <p class="text-xs text-slate-400 font-medium">Render Cloud Persistence, Auto Daily Snapshots & Instant Offline Backups</p>
             </div>
           </div>
           <button (click)="close.emit()" class="text-slate-400 hover:text-white text-lg p-1.5 cursor-pointer">✕</button>
@@ -124,7 +125,7 @@ import { IconComponent } from '../icon/icon.component';
                   <app-icon name="download" size="14" class="text-emerald-400"></app-icon>
                   Download Full DB Backup (.json)
                 </span>
-                <span class="text-[10px] font-mono bg-emerald-900 px-1.5 py-0.5 rounded text-emerald-200">1-CLICK</span>
+                <span class="text-[10px] font-mono bg-emerald-900 px-1.5 py-0.5 rounded text-emerald-200">INSTANT</span>
               </div>
               <p class="text-[10px] text-slate-400">Download complete offline JSON file of all 5,182 products, employee accounts, restocks & audit logs.</p>
             </button>
@@ -184,6 +185,7 @@ export class SecurityShieldModalComponent implements OnInit {
   constructor(
     private securityService: SecurityService,
     private productService: ProductService,
+    private authService: AuthService,
     private restockService: RestockService,
     private auditService: AuditService,
     private notificationService: NotificationService
@@ -275,16 +277,37 @@ export class SecurityShieldModalComponent implements OnInit {
   }
 
   public exportDatabaseJson() {
-    const apiUrl = this.securityService.getApiUrl();
-    window.open(`${apiUrl}/backup/export`, '_blank');
-    this.notificationService.sendNotification({
-      id: `notif_export_${Date.now()}`,
-      type: 'system',
-      title: '📥 Backup Database Diunduh',
-      message: 'File cadangan server lengkap (.json) berhasil diunduh.',
-      timestamp: new Date().toLocaleString('id-ID') + ' WIB',
-      read: false
-    });
+    this.productService.products$.subscribe(prods => {
+      const fullBackup = {
+        timestamp: new Date().toISOString(),
+        version: '2026.1',
+        store: 'Cantika Beauty Store Enterprise',
+        products: prods,
+        employees: this.authService.getEmployees ? this.authService.getEmployees() : [],
+        auditLogs: this.auditService.getLogs(),
+        globalProfitMargin: this.productService.getGlobalProfitMargin()
+      };
+
+      const jsonString = JSON.stringify(fullBackup, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cantika_db_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      this.notificationService.sendNotification({
+        id: `notif_export_${Date.now()}`,
+        type: 'system',
+        title: '📥 Backup Database Diunduh',
+        message: `File cadangan master database (${prods.length} produk) berhasil diunduh.`,
+        timestamp: new Date().toLocaleString('id-ID') + ' WIB',
+        read: false
+      });
+    }).unsubscribe();
   }
 
   public handleDatabaseRestoreFile(event: Event) {
