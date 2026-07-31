@@ -41,7 +41,7 @@ export class SecurityService {
         return `http://${host}:3000/api`;
       }
     }
-    return 'http://localhost:3000/api';
+    return 'https://cantika-pos.onrender.com/api';
   }
 
   public setApiUrl(url: string) {
