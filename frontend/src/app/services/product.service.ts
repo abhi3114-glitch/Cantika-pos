@@ -40,32 +40,33 @@ export class ProductService {
   }
 
   public loadProducts() {
-    // 1. First try loading from Central Backend API
+    // Talk directly to Central Render Backend API
     fetch(`${this.apiUrl}/products`)
       .then(res => {
         if (!res.ok) throw new Error('API server returned ' + res.status);
         return res.json();
       })
       .then((data: Product[]) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           this.productsSubject.next(data);
           this.securityService.setSecureStorage('cantika_products_vault', data);
-          return;
         }
-        this.fallbackLocalLoad();
       })
       .catch(err => {
-        console.warn('Backend API unreachable, falling back to local storage/vault:', err);
-        this.fallbackLocalLoad();
+        console.error('Render Server API Load Error:', err);
+        const cached = this.securityService.getSecureStorage('cantika_products_vault');
+        if (cached && Array.isArray(cached) && cached.length > 0) {
+          this.productsSubject.next(cached);
+        }
       });
   }
 
   private setupAutoSync() {
     if (typeof window !== 'undefined') {
-      // Background auto-sync polling every 8s for live multi-device sync
+      // 5-second background sync for real-time mobile <-> desktop sync
       setInterval(() => {
         this.silentSyncProducts();
-      }, 8000);
+      }, 5000);
 
       window.addEventListener('focus', () => {
         this.silentSyncProducts();
@@ -90,22 +91,6 @@ export class ProductService {
         }
       })
       .catch(() => {});
-  }
-
-  private fallbackLocalLoad() {
-    const cachedVault = this.securityService.getSecureStorage('cantika_products_vault');
-    if (cachedVault && Array.isArray(cachedVault) && cachedVault.length > 0) {
-      this.productsSubject.next(cachedVault);
-      return;
-    }
-
-    fetch('assets/products.json')
-      .then(res => res.json())
-      .then((data: Product[]) => {
-        this.productsSubject.next(data);
-        this.securityService.setSecureStorage('cantika_products_vault', data);
-      })
-      .catch(err => console.error('Failed to load assets/products.json:', err));
   }
 
   public getFilteredProducts(): Observable<Product[]> {
@@ -154,15 +139,16 @@ export class ProductService {
       const updatedList = [...current];
       updatedList[index] = updated;
       this.productsSubject.next(updatedList);
-      this.securityService.setSecureStorage('cantika_products_vault', updatedList);
     }
 
-    // Sync to Backend API
+    // Sync to Render Backend Server
     fetch(`${this.apiUrl}/products/${updated.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updated)
-    }).catch(err => console.warn('API sync warning:', err));
+    })
+    .then(() => this.loadProducts())
+    .catch(err => console.error('Render Product Update Error:', err));
   }
 
   public updateProducts(updatedItems: Product[]) {
@@ -175,38 +161,43 @@ export class ProductService {
       }
     });
     this.productsSubject.next(current);
-    this.securityService.setSecureStorage('cantika_products_vault', current);
 
-    // Sync Batch to Backend API
+    // Sync Batch to Render Backend Server
     fetch(`${this.apiUrl}/products/batch`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedItems)
-    }).catch(err => console.warn('API sync warning:', err));
+    })
+    .then(() => this.loadProducts())
+    .catch(err => console.error('Render Batch Update Error:', err));
   }
 
   public addProduct(newProduct: Product) {
     const updatedList = [newProduct, ...this.productsSubject.value];
     this.productsSubject.next(updatedList);
-    this.securityService.setSecureStorage('cantika_products_vault', updatedList);
 
-    // Sync to Backend API
+    // Sync to Render Backend Server
     fetch(`${this.apiUrl}/products`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newProduct)
-    }).catch(err => console.warn('API sync warning:', err));
+    })
+    .then(() => this.loadProducts())
+    .catch(err => console.error('Render Add Product Error:', err));
   }
 
   public deleteProduct(id: string) {
+    // Optimistic UI update
     const updatedList = this.productsSubject.value.filter(p => p.id !== id);
     this.productsSubject.next(updatedList);
-    this.securityService.setSecureStorage('cantika_products_vault', updatedList);
 
-    // Sync to Backend API
+    // Sync DELETE directly to Render Backend Server
     fetch(`${this.apiUrl}/products/${id}`, {
       method: 'DELETE'
-    }).catch(err => console.warn('API sync warning:', err));
+    })
+    .then(res => res.json())
+    .then(() => this.loadProducts())
+    .catch(err => console.error('Render Delete Error:', err));
   }
 
   public getGlobalProfitMargin(): number {
@@ -225,12 +216,12 @@ export class ProductService {
     } catch (e) {}
     this.globalProfitMarginSubject.next(valid);
 
-    // Sync to Backend API
+    // Sync to Render Backend Server
     fetch(`${this.apiUrl}/margin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ margin: valid })
-    }).catch(err => console.warn('API sync warning:', err));
+    }).catch(err => console.warn('Render margin sync warning:', err));
   }
 
   // Cart operations

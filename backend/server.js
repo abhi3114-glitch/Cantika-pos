@@ -7,8 +7,16 @@ const os = require('os');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Enable CORS for Vercel and all external clients
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['*'] }));
+app.options('*', cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Request Logger Middleware (Visible in Render Dashboard Logs)
+app.use((req, res, next) => {
+  console.log(`[RENDER API LOG] ${req.method} ${req.url}`);
+  next();
+});
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -89,6 +97,7 @@ app.post('/api/products', (req, res) => {
   }
   db.products.unshift(newProduct);
   saveDB(db);
+  console.log(`[RENDER DB] Product Added: ${newProduct.name} (SKU: ${newProduct.sku})`);
   res.status(201).json(newProduct);
 });
 
@@ -106,6 +115,7 @@ app.put('/api/products/batch', (req, res) => {
   });
 
   saveDB(db);
+  console.log(`[RENDER DB] Batch updated ${updatedItems.length} products`);
   res.json({ success: true, count: updatedItems.length });
 });
 
@@ -118,17 +128,20 @@ app.put('/api/products/:id', (req, res) => {
   }
   db.products[idx] = { ...db.products[idx], ...updatedProduct };
   saveDB(db);
+  console.log(`[RENDER DB] Product Updated: ${db.products[idx].name}`);
   res.json(db.products[idx]);
 });
 
 app.delete('/api/products/:id', (req, res) => {
   const { id } = req.params;
   const initialLen = db.products.length;
+  const deletedProd = db.products.find(p => p.id === id);
   db.products = db.products.filter(p => p.id !== id);
   if (db.products.length === initialLen) {
     return res.status(404).json({ error: 'Product not found' });
   }
   saveDB(db);
+  console.log(`[RENDER DB] PRODUCT DELETED: ${deletedProd ? deletedProd.name : id} (Remaining: ${db.products.length})`);
   res.json({ success: true, id });
 });
 
@@ -144,6 +157,7 @@ app.post('/api/employees', (req, res) => {
   }
   db.employees.unshift(newEmp);
   saveDB(db);
+  console.log(`[RENDER DB] Employee Created: ${newEmp.name} (${newEmp.phone})`);
   res.status(201).json(newEmp);
 });
 
@@ -151,6 +165,7 @@ app.delete('/api/employees/:id', (req, res) => {
   const { id } = req.params;
   db.employees = (db.employees || []).filter(e => e.id !== id);
   saveDB(db);
+  console.log(`[RENDER DB] Employee Deleted: ${id}`);
   res.json({ success: true, id });
 });
 
@@ -163,6 +178,7 @@ app.post('/api/restock', (req, res) => {
   const newOrder = req.body;
   db.restockOrders.unshift(newOrder);
   saveDB(db);
+  console.log(`[RENDER DB] Restock Order Created: ${newOrder.id}`);
   res.status(201).json(newOrder);
 });
 
@@ -172,6 +188,7 @@ app.put('/api/restock/:id/toggle-paid', (req, res) => {
     o.id === id ? { ...o, isPaid: !o.isPaid } : o
   );
   saveDB(db);
+  console.log(`[RENDER DB] Restock Order Paid Toggled: ${id}`);
   res.json({ success: true, id });
 });
 
@@ -184,6 +201,7 @@ app.post('/api/audit', (req, res) => {
   const newLog = req.body;
   db.auditLogs.unshift(newLog);
   saveDB(db);
+  console.log(`[RENDER DB] AUDIT LOG ADDED: ${newLog.userName} - ${newLog.fieldChanged} (${newLog.productName})`);
   res.status(201).json(newLog);
 });
 
@@ -211,6 +229,7 @@ app.post('/api/margin', (req, res) => {
   const { margin } = req.body;
   db.globalProfitMargin = Number(margin) || 20;
   saveDB(db);
+  console.log(`[RENDER DB] Global Profit Margin Updated: ${db.globalProfitMargin}%`);
   res.json({ success: true, margin: db.globalProfitMargin });
 });
 
