@@ -123,21 +123,37 @@ async function connectAndSeedDatabase() {
       isMongoConnected = true;
       console.log('🍃 CONNECTED TO MONGODB ATLAS CLOUD DATABASE!');
 
-      // Seed 5,182 products if MongoDB is empty
+      // Seed 5,182 products if MongoDB is empty or has invalid duplicates
       const count = await ProductModel.countDocuments();
-      if (count === 0) {
+      if (count < 1000) {
         console.log('Seeding MongoDB Atlas with 5,182 products from assets...');
         const seedJsonPath = path.join(__dirname, '..', 'frontend', 'src', 'assets', 'products.json');
         if (fs.existsSync(seedJsonPath)) {
           const raw = fs.readFileSync(seedJsonPath, 'utf8');
           const products = JSON.parse(raw);
-          products.forEach(p => {
+          const seenIds = new Set();
+          const cleanProducts = [];
+
+          products.forEach((p, idx) => {
             if (!p.vendor || !p.vendor.trim()) {
               p.vendor = extractBrandName(p.name, p.vendor);
             }
+            let cleanId = p.id;
+            if (!cleanId || cleanId === 'prod__' || seenIds.has(cleanId)) {
+              cleanId = `prod_${p.sku || p.barcode || idx}_${idx}`;
+            }
+            seenIds.add(cleanId);
+            p.id = cleanId;
+            cleanProducts.push(p);
           });
-          await ProductModel.insertMany(products);
-          console.log(`✅ Successfully seeded ${products.length} products to MongoDB Atlas!`);
+
+          try {
+            await ProductModel.deleteMany({});
+            await ProductModel.insertMany(cleanProducts, { ordered: false });
+            console.log(`✅ Successfully seeded ${cleanProducts.length} products to MongoDB Atlas!`);
+          } catch (seedErr) {
+            console.warn('MongoDB partial seed warning (proceeding with seeded items):', seedErr.message);
+          }
         }
       } else {
         console.log(`🍃 MongoDB Atlas active with ${count} registered products.`);
@@ -282,18 +298,18 @@ app.post('/api/backup/restore', async (req, res) => {
 
     if (isMongoConnected) {
       await ProductModel.deleteMany({});
-      await ProductModel.insertMany(newDb.products);
+      await ProductModel.insertMany(newDb.products, { ordered: false });
       if (Array.isArray(newDb.employees)) {
         await EmployeeModel.deleteMany({});
-        await EmployeeModel.insertMany(newDb.employees);
+        await EmployeeModel.insertMany(newDb.employees, { ordered: false });
       }
       if (Array.isArray(newDb.restockOrders)) {
         await RestockModel.deleteMany({});
-        await RestockModel.insertMany(newDb.restockOrders);
+        await RestockModel.insertMany(newDb.restockOrders, { ordered: false });
       }
       if (Array.isArray(newDb.auditLogs)) {
         await AuditModel.deleteMany({});
-        await AuditModel.insertMany(newDb.auditLogs);
+        await AuditModel.insertMany(newDb.auditLogs, { ordered: false });
       }
       res.json({ success: true, totalProducts: newDb.products.length });
     } else {
@@ -331,6 +347,9 @@ app.post('/api/products', async (req, res) => {
   }
   if (!newProduct.vendor || !newProduct.vendor.trim()) {
     newProduct.vendor = extractBrandName(newProduct.name, newProduct.vendor);
+  }
+  if (!newProduct.id || newProduct.id === 'prod__') {
+    newProduct.id = `prod_${newProduct.sku || Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   }
 
   if (isMongoConnected) {
