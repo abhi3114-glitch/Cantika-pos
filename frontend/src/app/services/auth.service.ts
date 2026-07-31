@@ -7,6 +7,9 @@ import { SecurityService } from './security.service';
   providedIn: 'root'
 })
 export class AuthService {
+  private apiUrl = (typeof window !== 'undefined' && (window as any).CANTIKA_API_URL) 
+    || 'http://localhost:3000/api';
+
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -23,15 +26,24 @@ export class AuthService {
   }
 
   private loadEmployees() {
-    // Load employees from persistent storage; default to empty array (owner adds their own)
+    fetch(`${this.apiUrl}/employees`)
+      .then(res => res.json())
+      .then((data: EmployeeAccount[]) => {
+        if (Array.isArray(data)) {
+          this.employeesSubject.next(data);
+          this.securityService.setSecureStorage('cantika_employees_vault', data);
+          return;
+        }
+        this.fallbackEmployeesLoad();
+      })
+      .catch(() => this.fallbackEmployeesLoad());
+  }
+
+  private fallbackEmployeesLoad() {
     const cached = this.securityService.getSecureStorage('cantika_employees_vault', []);
     this.employeesSubject.next(Array.isArray(cached) ? cached : []);
   }
 
-  /**
-   * Restore session from localStorage so the owner does not need to
-   * log in again on every page refresh.
-   */
   private restoreSession() {
     if (typeof localStorage === 'undefined') return;
     try {
@@ -106,7 +118,6 @@ export class AuthService {
     };
   }
 
-  // Method for Owner to create a new Employee Login
   public createEmployeeAccount(name: string, phone: string, password: string, jobTitle: string, canEditPrice = false): { success: boolean; message: string } {
     const cleanPhone = phone.trim().replace(/[^0-9]/g, '');
 
@@ -133,6 +144,13 @@ export class AuthService {
     this.employeesSubject.next(updated);
     this.securityService.setSecureStorage('cantika_employees_vault', updated);
 
+    // Sync with Central Backend API
+    fetch(`${this.apiUrl}/employees`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newEmp)
+    }).catch(err => console.warn('Employee sync warning:', err));
+
     const statusNote = canEditPrice ? 'dengan Hak Akses Edit Harga' : 'sebagai Kasir Standar';
     return { success: true, message: `Berhasil membuat akun karyawan untuk ${name} (${statusNote}).` };
   }
@@ -145,6 +163,12 @@ export class AuthService {
     const updated = current.filter(e => e.id !== id);
     this.employeesSubject.next(updated);
     this.securityService.setSecureStorage('cantika_employees_vault', updated);
+
+    // Sync with Central Backend API
+    fetch(`${this.apiUrl}/employees/${id}`, {
+      method: 'DELETE'
+    }).catch(err => console.warn('Employee delete sync warning:', err));
+
     return { success: true, message: `Akun karyawan ${target.name} berhasil dihapus.` };
   }
 

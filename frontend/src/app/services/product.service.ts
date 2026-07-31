@@ -8,6 +8,9 @@ import { SecurityService } from './security.service';
   providedIn: 'root'
 })
 export class ProductService {
+  private apiUrl = (typeof window !== 'undefined' && (window as any).CANTIKA_API_URL) 
+    || 'http://localhost:3000/api';
+
   private productsSubject = new BehaviorSubject<Product[]>([]);
   public products$ = this.productsSubject.asObservable();
 
@@ -35,6 +38,27 @@ export class ProductService {
   }
 
   private loadProducts() {
+    // 1. First try loading from Central Backend API
+    fetch(`${this.apiUrl}/products`)
+      .then(res => {
+        if (!res.ok) throw new Error('API server returned ' + res.status);
+        return res.json();
+      })
+      .then((data: Product[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          this.productsSubject.next(data);
+          this.securityService.setSecureStorage('cantika_products_vault', data);
+          return;
+        }
+        this.fallbackLocalLoad();
+      })
+      .catch(err => {
+        console.warn('Backend API un-reachable, falling back to local storage/vault:', err);
+        this.fallbackLocalLoad();
+      });
+  }
+
+  private fallbackLocalLoad() {
     const cachedVault = this.securityService.getSecureStorage('cantika_products_vault');
     if (cachedVault && Array.isArray(cachedVault) && cachedVault.length > 0) {
       this.productsSubject.next(cachedVault);
@@ -47,9 +71,7 @@ export class ProductService {
         this.productsSubject.next(data);
         this.securityService.setSecureStorage('cantika_products_vault', data);
       })
-      .catch(err => {
-        console.error('Failed to load products.json:', err);
-      });
+      .catch(err => console.error('Failed to load assets/products.json:', err));
   }
 
   public getFilteredProducts(): Observable<Product[]> {
@@ -100,6 +122,13 @@ export class ProductService {
       this.productsSubject.next(updatedList);
       this.securityService.setSecureStorage('cantika_products_vault', updatedList);
     }
+
+    // Sync to Backend API
+    fetch(`${this.apiUrl}/products/${updated.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
+    }).catch(err => console.warn('API sync warning:', err));
   }
 
   public updateProducts(updatedItems: Product[]) {
@@ -113,18 +142,37 @@ export class ProductService {
     });
     this.productsSubject.next(current);
     this.securityService.setSecureStorage('cantika_products_vault', current);
+
+    // Sync Batch to Backend API
+    fetch(`${this.apiUrl}/products/batch`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedItems)
+    }).catch(err => console.warn('API sync warning:', err));
   }
 
   public addProduct(newProduct: Product) {
     const updatedList = [newProduct, ...this.productsSubject.value];
     this.productsSubject.next(updatedList);
     this.securityService.setSecureStorage('cantika_products_vault', updatedList);
+
+    // Sync to Backend API
+    fetch(`${this.apiUrl}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newProduct)
+    }).catch(err => console.warn('API sync warning:', err));
   }
 
   public deleteProduct(id: string) {
     const updatedList = this.productsSubject.value.filter(p => p.id !== id);
     this.productsSubject.next(updatedList);
     this.securityService.setSecureStorage('cantika_products_vault', updatedList);
+
+    // Sync to Backend API
+    fetch(`${this.apiUrl}/products/${id}`, {
+      method: 'DELETE'
+    }).catch(err => console.warn('API sync warning:', err));
   }
 
   public getGlobalProfitMargin(): number {
@@ -142,6 +190,13 @@ export class ProductService {
       localStorage.setItem('cantika_global_profit_margin', String(valid));
     } catch (e) {}
     this.globalProfitMarginSubject.next(valid);
+
+    // Sync to Backend API
+    fetch(`${this.apiUrl}/margin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ margin: valid })
+    }).catch(err => console.warn('API sync warning:', err));
   }
 
   // Cart operations
