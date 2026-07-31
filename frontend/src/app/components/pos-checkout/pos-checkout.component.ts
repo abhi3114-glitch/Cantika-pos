@@ -88,7 +88,7 @@ import { IconComponent } from '../icon/icon.component';
             >
               <div>
                 <div class="flex items-center justify-between text-[10px] mb-1">
-                  <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold uppercase text-[9px] truncate max-w-[100px]">{{ p.vendor }}</span>
+                  <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold uppercase text-[9px] truncate max-w-[100px]">{{ getVendorDisplay(p) }}</span>
                   <span [class]="p.stock === 0 ? 'text-rose-600 dark:text-rose-400 font-bold text-[9px]' : (p.stock <= 2 ? 'text-amber-600 dark:text-amber-400 font-bold text-[9px]' : 'text-slate-400 dark:text-slate-500 text-[9px]')">
                     {{ p.stock === 0 ? 'Out of Stock' : (p.stock + ' ' + p.unit) }}
                   </span>
@@ -144,8 +144,9 @@ import { IconComponent } from '../icon/icon.component';
                 <input
                   type="number"
                   min="1"
-                  [(ngModel)]="item.quantity"
-                  (ngModelChange)="setDirectQty(idx, $event)"
+                  [name]="'cart_qty_' + idx"
+                  [ngModel]="item.quantity"
+                  (input)="setDirectQty(idx, $any($event.target).value)"
                   class="font-mono font-bold text-slate-900 dark:text-white w-11 text-center text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded py-0.5"
                 />
                 <button (click)="updateQty(idx, 1)" class="w-6 h-6 rounded bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-center cursor-pointer text-xs shadow-xs">+</button>
@@ -238,8 +239,10 @@ import { IconComponent } from '../icon/icon.component';
 
               <input
                 type="number"
-                [(ngModel)]="cashPaid"
-                (ngModelChange)="onCashInput($event)"
+                name="cashPaidInput"
+                [ngModel]="cashPaid"
+                (input)="onCashInput($any($event.target).value)"
+                (keyup)="onCashInput($any($event.target).value)"
                 placeholder="Enter cash received (e.g. 50000)..."
                 class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-400 dark:border-emerald-700 rounded-xl text-sm font-mono font-black text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 shadow-xs"
               />
@@ -596,6 +599,14 @@ export class PosCheckoutComponent implements OnInit {
     const cash = this.getCashPaidNumber();
     if (cash < total) return 0;
     return cash - total;
+  }
+
+  public getVendorDisplay(p: Product): string {
+    if (p && p.vendor && p.vendor.trim()) return p.vendor.trim();
+    if (!p || !p.name) return 'BEAUTY';
+    const clean = p.name.trim().replace(/^CV\.\s*/i, '');
+    const firstWord = clean.split(/[\s\-_\/:]+/)[0];
+    return firstWord ? firstWord.toUpperCase() : 'BEAUTY';
   }
 
   public getCurrentUser() {

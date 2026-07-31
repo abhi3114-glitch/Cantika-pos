@@ -218,7 +218,7 @@ import { IconComponent } from '../icon/icon.component';
                   <td class="p-3.5 font-extrabold text-slate-900 dark:text-white leading-snug">{{ p.name }}</td>
                   <td class="p-3.5 whitespace-nowrap">
                     <span class="inline-block px-2.5 py-1 rounded-md bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 text-[10px] font-extrabold uppercase border border-rose-200 dark:border-rose-900 tracking-tight whitespace-nowrap">
-                      {{ p.vendor }}
+                      {{ getVendorDisplay(p) }}
                     </span>
                   </td>
                   <td class="p-3.5 text-right font-mono font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">{{ formatIDR(p.buyingPrice) }}</td>
@@ -608,6 +608,14 @@ export class AdminPosComponent implements OnInit {
       currency: 'IDR',
       maximumFractionDigits: 0
     }).format(val);
+  }
+
+  public getVendorDisplay(p: Product): string {
+    if (p && p.vendor && p.vendor.trim()) return p.vendor.trim();
+    if (!p || !p.name) return 'BEAUTY';
+    const clean = p.name.trim().replace(/^CV\.\s*/i, '');
+    const firstWord = clean.split(/[\s\-_\/:]+/)[0];
+    return firstWord ? firstWord.toUpperCase() : 'BEAUTY';
   }
 
   public exportInventoryCSV() {
