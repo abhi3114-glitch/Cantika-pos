@@ -1,22 +1,6 @@
 {
   "products": [
     {
-      "id": "prod_as0001",
-      "sku": "as0001",
-      "barcode": "as0001",
-      "name": "3 Fashion eyelashes",
-      "vendor": "",
-      "type": "AKSESORIS",
-      "buyingPrice": 6000,
-      "price": 10000,
-      "stock": 0,
-      "unit": "pcs",
-      "weight": 1,
-      "weightUnit": "kg",
-      "collection": "AKSESORIS",
-      "isActive": true
-    },
-    {
       "id": "prod_9123452253709",
       "sku": "9123452253709",
       "barcode": "9123452253709",
@@ -86502,7 +86486,29 @@
     }
   ],
   "employees": [],
-  "restockOrders": [],
+  "restockOrders": [
+    {
+      "id": "restock_1785512883180",
+      "billCode": "BILL-2026-8104",
+      "timestamp": "31/7/2026, 21.18.03 WIB",
+      "receivedByUserId": "usr_owner_1",
+      "receivedByUserName": "Jess Lim (Owner & Pemilik)",
+      "supplierName": "CV. ANUGRAH SEKAWAN ABADI JABAR",
+      "totalAmountToPay": 645320,
+      "paymentDeadline": "2026-08-20",
+      "isPaid": false,
+      "items": [
+        {
+          "productId": "prod_788364959041",
+          "productName": "ACNAWAY - ACNE TREATMENT CREAM - 20 GR",
+          "sku": "788364959041",
+          "quantityAdded": 20,
+          "buyingPriceUnit": 32266,
+          "totalCost": 645320
+        }
+      ]
+    }
+  ],
   "auditLogs": [],
   "notifications": [],
   "globalProfitMargin": 20
