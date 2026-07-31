@@ -36,6 +36,7 @@ export class ProductService {
 
   constructor(private securityService: SecurityService) {
     this.loadProducts();
+    this.setupAutoSync();
   }
 
   public loadProducts() {
@@ -57,6 +58,38 @@ export class ProductService {
         console.warn('Backend API unreachable, falling back to local storage/vault:', err);
         this.fallbackLocalLoad();
       });
+  }
+
+  private setupAutoSync() {
+    if (typeof window !== 'undefined') {
+      // Background auto-sync polling every 8s for live multi-device sync
+      setInterval(() => {
+        this.silentSyncProducts();
+      }, 8000);
+
+      window.addEventListener('focus', () => {
+        this.silentSyncProducts();
+      });
+    }
+  }
+
+  private silentSyncProducts() {
+    fetch(`${this.apiUrl}/products`)
+      .then(res => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data: Product[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const currentJson = JSON.stringify(this.productsSubject.value);
+          const newJson = JSON.stringify(data);
+          if (currentJson !== newJson) {
+            this.productsSubject.next(data);
+            this.securityService.setSecureStorage('cantika_products_vault', data);
+          }
+        }
+      })
+      .catch(() => {});
   }
 
   private fallbackLocalLoad() {

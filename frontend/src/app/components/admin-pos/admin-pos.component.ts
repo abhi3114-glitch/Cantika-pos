@@ -636,16 +636,37 @@ export class AdminPosComponent implements OnInit {
 
   public confirmDeleteProduct() {
     if (this.deleteConfirmProduct) {
-      const deletedName = this.deleteConfirmProduct.name;
-      this.productService.deleteProduct(this.deleteConfirmProduct.id);
+      const p = this.deleteConfirmProduct;
+      const user = this.authService.getCurrentUser();
+
+      // 1. Delete product from catalog & backend
+      this.productService.deleteProduct(p.id);
+
+      // 2. Add entry to Audit Log
+      this.auditService.addLog({
+        id: `audit_del_${Date.now()}`,
+        timestamp: new Date().toLocaleString('id-ID'),
+        userId: user?.id || 'usr_owner_1',
+        userName: user?.name || 'Jess Lim (Owner)',
+        userRole: user?.role === 'owner' ? 'Owner' : 'Kasir',
+        productId: p.id,
+        productName: p.name,
+        productSku: p.sku,
+        fieldChanged: 'HAPUS PRODUK KATALOG',
+        oldValue: `SKU: ${p.sku} | Stok: ${p.stock} | Rp ${p.price}`,
+        newValue: 'PRODUK DIHAPUS DARI SISTEM'
+      });
+
+      // 3. Trigger Notification
       this.notificationService.sendNotification({
         id: `notif_del_${Date.now()}`,
         type: 'system',
         title: '🗑️ Produk Dihapus',
-        message: `Produk "${deletedName}" telah dihapus dari katalog stok.`,
+        message: `Produk "${p.name}" (SKU: ${p.sku}) telah dihapus dari katalog.`,
         timestamp: new Date().toLocaleString('id-ID') + ' WIB',
         read: false
       });
+
       this.deleteConfirmProduct = null;
     }
   }
