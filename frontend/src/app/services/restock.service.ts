@@ -17,7 +17,7 @@ export class RestockService {
     this.loadRestockOrders();
   }
 
-  private loadRestockOrders() {
+  public loadRestockOrders() {
     fetch(`${this.apiUrl}/restock`)
       .then(res => res.json())
       .then((data: RestockOrder[]) => {
