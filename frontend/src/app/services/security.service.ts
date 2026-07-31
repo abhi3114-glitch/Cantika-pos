@@ -22,6 +22,33 @@ export class SecurityService {
     }
   }
 
+  public getApiUrl(): string {
+    if (typeof localStorage !== 'undefined') {
+      const custom = localStorage.getItem('cantika_backend_api_url');
+      if (custom && custom.trim()) {
+        let url = custom.trim().replace(/\/+$/, '');
+        if (!url.endsWith('/api')) url += '/api';
+        return url;
+      }
+    }
+    if (typeof window !== 'undefined' && (window as any).CANTIKA_API_URL) {
+      const raw = (window as any).CANTIKA_API_URL.trim().replace(/\/+$/, '');
+      return raw.endsWith('/api') ? raw : raw + '/api';
+    }
+    return 'http://localhost:3000/api';
+  }
+
+  public setApiUrl(url: string) {
+    if (typeof localStorage !== 'undefined') {
+      if (!url || !url.trim()) {
+        localStorage.removeItem('cantika_backend_api_url');
+      } else {
+        let clean = url.trim().replace(/\/+$/, '');
+        localStorage.setItem('cantika_backend_api_url', clean);
+      }
+    }
+  }
+
   public isSessionExpired(): boolean {
     const elapsedMinutes = (Date.now() - this.lastActivityTime) / (1000 * 60);
     return elapsedMinutes > this.autoLockMinutes;

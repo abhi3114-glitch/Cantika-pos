@@ -8,8 +8,9 @@ import { SecurityService } from './security.service';
   providedIn: 'root'
 })
 export class ProductService {
-  private apiUrl = (typeof window !== 'undefined' && (window as any).CANTIKA_API_URL) 
-    || 'http://localhost:3000/api';
+  private get apiUrl(): string {
+    return this.securityService.getApiUrl();
+  }
 
   private productsSubject = new BehaviorSubject<Product[]>([]);
   public products$ = this.productsSubject.asObservable();
@@ -37,7 +38,7 @@ export class ProductService {
     this.loadProducts();
   }
 
-  private loadProducts() {
+  public loadProducts() {
     // 1. First try loading from Central Backend API
     fetch(`${this.apiUrl}/products`)
       .then(res => {
@@ -53,7 +54,7 @@ export class ProductService {
         this.fallbackLocalLoad();
       })
       .catch(err => {
-        console.warn('Backend API un-reachable, falling back to local storage/vault:', err);
+        console.warn('Backend API unreachable, falling back to local storage/vault:', err);
         this.fallbackLocalLoad();
       });
   }

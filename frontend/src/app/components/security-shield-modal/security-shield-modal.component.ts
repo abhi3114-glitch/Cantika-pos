@@ -6,7 +6,6 @@ import { ProductService } from '../../services/product.service';
 import { RestockService } from '../../services/restock.service';
 import { AuditService } from '../../services/audit.service';
 import { NotificationService } from '../../services/notification.service';
-import { Product } from '../../models/product.model';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
@@ -15,7 +14,7 @@ import { IconComponent } from '../icon/icon.component';
   imports: [CommonModule, FormsModule, IconComponent],
   template: `
     <div *ngIf="isOpen" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-slate-800 text-white rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-6">
+      <div class="bg-slate-900 border border-slate-800 text-white rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-6 max-h-[90vh] overflow-y-auto">
         
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -25,13 +24,51 @@ import { IconComponent } from '../icon/icon.component';
             </div>
             <div>
               <h2 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
-                Database Security Vault (AES-256 GCM)
-                <span class="px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-mono rounded-md font-bold">ACTIVE</span>
+                Database & Server Connection Vault
+                <span class="px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-mono rounded-md font-bold">ONLINE</span>
               </h2>
-              <p class="text-xs text-slate-400 font-medium">Cryptographic Storage Vault & Integrity Assurance</p>
+              <p class="text-xs text-slate-400 font-medium">Central Cloud Database & Multi-Device Sync Settings</p>
             </div>
           </div>
           <button (click)="close.emit()" class="text-slate-400 hover:text-white text-lg p-1.5 cursor-pointer">✕</button>
+        </div>
+
+        <!-- Live Server Connection Config Section -->
+        <div class="p-4 bg-slate-950 border border-sky-900/50 rounded-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-sky-400 uppercase tracking-wider">🌐 Backend API Server Connection</span>
+              <span [class]="serverStatus === 'online' ? 'px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-mono rounded font-bold' : 'px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-800 text-[10px] font-mono rounded font-bold'">
+                {{ serverStatus === 'online' ? 'CONNECTED' : 'LOCAL FALLBACK' }}
+              </span>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Connect your frontend application to your live deployed backend server (e.g. Render, Railway, or VPS) so changes sync in real-time across your laptop, phone, and tablet.
+          </p>
+
+          <div class="space-y-2 pt-1">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase">Deployed Backend Server URL:</label>
+            <div class="flex items-center gap-2">
+              <input
+                type="url"
+                [(ngModel)]="apiUrlInput"
+                placeholder="https://your-backend-api.onrender.com"
+                class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+              />
+              <button
+                (click)="testAndSaveServerUrl()"
+                [disabled]="isTestingServer"
+                class="px-4 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer shadow-xs transition-colors flex items-center gap-1.5"
+              >
+                <span>{{ isTestingServer ? 'Connecting...' : 'Save & Sync' }}</span>
+              </button>
+            </div>
+            <div *ngIf="connectionFeedback" [class]="serverStatus === 'online' ? 'text-[11px] font-bold text-emerald-400 font-mono mt-1' : 'text-[11px] font-bold text-amber-400 font-mono mt-1'">
+              {{ connectionFeedback }}
+            </div>
+          </div>
         </div>
 
         <!-- Live Database Security Health Metrics -->
@@ -98,7 +135,7 @@ import { IconComponent } from '../icon/icon.component';
         <!-- Backup Vault Actions -->
         <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
           <div class="text-xs text-slate-400">
-            Enkripsi lokal aktif untuk <strong>{{ totalProducts }} Produk</strong> & <strong>Faktur Restok</strong>.
+            Enkripsi aktif untuk <strong>{{ totalProducts }} Produk</strong> & <strong>Faktur Restok</strong>.
           </div>
 
           <div class="flex items-center gap-2">
@@ -122,6 +159,10 @@ export class SecurityShieldModalComponent implements OnInit {
 
   public catalogHash = '';
   public totalProducts = 0;
+  public apiUrlInput = '';
+  public isTestingServer = false;
+  public serverStatus: 'online' | 'offline' = 'offline';
+  public connectionFeedback = '';
 
   constructor(
     private securityService: SecurityService,
@@ -132,13 +173,80 @@ export class SecurityShieldModalComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.apiUrlInput = this.securityService.getApiUrl().replace(/\/api$/, '');
+    this.checkCurrentServerStatus();
     this.refreshHash();
   }
 
   ngOnChanges() {
     if (this.isOpen) {
+      this.apiUrlInput = this.securityService.getApiUrl().replace(/\/api$/, '');
+      this.checkCurrentServerStatus();
       this.refreshHash();
     }
+  }
+
+  private checkCurrentServerStatus() {
+    const targetUrl = this.securityService.getApiUrl();
+    fetch(`${targetUrl}/health`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.status === 'ok') {
+          this.serverStatus = 'online';
+          this.connectionFeedback = `Terhubung ke Backend Server (${data.totalProducts || 5182} produk terdaftar).`;
+        } else {
+          this.serverStatus = 'offline';
+        }
+      })
+      .catch(() => {
+        this.serverStatus = 'offline';
+        this.connectionFeedback = 'Server API lokal/cloud belum terhubung (Menggunakan Mode Vault Lokal).';
+      });
+  }
+
+  public testAndSaveServerUrl() {
+    if (!this.apiUrlInput || !this.apiUrlInput.trim()) {
+      this.securityService.setApiUrl('');
+      this.connectionFeedback = 'Menggunakan Backend API Default (http://localhost:3000/api)';
+      this.checkCurrentServerStatus();
+      this.productService.loadProducts();
+      return;
+    }
+
+    this.isTestingServer = true;
+    this.connectionFeedback = 'Menguji koneksi server API...';
+
+    let cleanUrl = this.apiUrlInput.trim().replace(/\/+$/, '');
+    let testEndpoint = cleanUrl.endsWith('/api') ? `${cleanUrl}/health` : `${cleanUrl}/api/health`;
+
+    fetch(testEndpoint)
+      .then(res => res.json())
+      .then(data => {
+        this.isTestingServer = false;
+        if (data && data.status === 'ok') {
+          this.securityService.setApiUrl(cleanUrl);
+          this.serverStatus = 'online';
+          this.connectionFeedback = '✅ Berhasil terhubung ke Backend Server Cloud! Memuat data produk...';
+          this.productService.loadProducts();
+          this.notificationService.sendNotification({
+            id: `notif_server_${Date.now()}`,
+            type: 'system',
+            title: '🌐 Backend Server Terhubung',
+            message: `Frontend berhasil terhubung ke ${cleanUrl}`,
+            timestamp: new Date().toLocaleString('id-ID') + ' WIB',
+            read: false
+          });
+        } else {
+          this.isTestingServer = false;
+          this.serverStatus = 'offline';
+          this.connectionFeedback = '❌ Server merespons tetapi format bukan Backend Cantika POS.';
+        }
+      })
+      .catch(err => {
+        this.isTestingServer = false;
+        this.serverStatus = 'offline';
+        this.connectionFeedback = '❌ Gagal terhubung ke URL Server. Pastikan Backend Server sudah aktif/deployed.';
+      });
   }
 
   private async refreshHash() {
