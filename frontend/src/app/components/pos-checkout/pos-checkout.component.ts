@@ -285,7 +285,7 @@ import { IconComponent } from '../icon/icon.component';
             <div *ngIf="lastSale" class="p-2.5 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 rounded-lg space-y-1 text-xs animate-fade-in">
               <div class="font-bold flex items-center justify-between">
                 <span>✓ Sale Completed!</span>
-                <span class="font-mono">INV #{{ lastSale.id }}</span>
+                <span class="font-mono">INV #{{ lastSale.transactionNumber }}</span>
               </div>
             </div>
 
@@ -309,6 +309,9 @@ export class PosCheckoutComponent implements OnInit {
   public customerPhone = '';
   public paymentMethod: 'Tunai' | 'QRIS' | 'Transfer Bank' | 'COD' = 'Tunai';
   public cashPaid = 0;
+  public discountType: 'percent' | 'nominal' = 'percent';
+  public discountValue = 0;
+
   public transactionNumber = `POS-${Date.now().toString().slice(-6)}`;
   public lastSale: SaleTransaction | null = null;
   public stockAlertMessage = '';
@@ -445,30 +448,25 @@ export class PosCheckoutComponent implements OnInit {
   public addToCart(product: Product) {
     if (!product) return;
 
-    const existing = this.cart.find(c => c.product.id === product.id);
+    // Fresh product instance resolution
+    const latestProd = this.allProducts.find(p => p.id === product.id) || product;
+    const existing = this.cart.find(c => c.product.id === latestProd.id);
 
     if (existing) {
       existing.quantity += 1;
-      if (existing.quantity > product.stock) {
-        this.stockAlertMessage = `⚠️ System Stock Notice: "${product.name}" quantity (${existing.quantity}) exceeds recorded system stock (${product.stock} ${product.unit}). Item added to sale.`;
+      if (existing.quantity > latestProd.stock) {
+        this.stockAlertMessage = `⚠️ System Stock Notice: "${latestProd.name}" quantity (${existing.quantity}) exceeds recorded system stock (${latestProd.stock} ${latestProd.unit}). Item added to sale.`;
         setTimeout(() => this.stockAlertMessage = '', 4000);
       }
     } else {
-      this.cart.push({ product, quantity: 1 });
-      if (product.stock <= 0) {
-        this.stockAlertMessage = `⚠️ System Stock Notice: "${product.name}" has 0 recorded stock in system. Added to Current Sale.`;
+      this.cart.push({ product: { ...latestProd }, quantity: 1 });
+      if (latestProd.stock <= 0) {
+        this.stockAlertMessage = `⚠️ System Stock Notice: "${latestProd.name}" has 0 recorded stock in system. Added to Current Sale.`;
         setTimeout(() => this.stockAlertMessage = '', 4000);
       }
     }
     this.cart = [...this.cart];
     this.persistCart();
-  }
-
-  public quickRestockProduct(product: Product) {
-    const updated = { ...product, stock: (product.stock || 0) + 10 };
-    this.productService.updateProduct(updated);
-    this.stockAlertMessage = `✅ Restocked 10 pcs for "${product.name}". New stock: ${updated.stock} pcs.`;
-    setTimeout(() => this.stockAlertMessage = '', 4000);
   }
 
   public updateQty(index: number, delta: number) {
@@ -480,8 +478,9 @@ export class PosCheckoutComponent implements OnInit {
       this.cart.splice(index, 1);
     } else {
       item.quantity = newQty;
-      if (newQty > item.product.stock) {
-        this.stockAlertMessage = `⚠️ System Stock Notice: "${item.product.name}" quantity (${newQty}) exceeds recorded system stock (${item.product.stock} ${item.product.unit}).`;
+      const latestProd = this.allProducts.find(p => p.id === item.product.id) || item.product;
+      if (newQty > latestProd.stock) {
+        this.stockAlertMessage = `⚠️ System Stock Notice: "${latestProd.name}" quantity (${newQty}) exceeds recorded system stock (${latestProd.stock} ${latestProd.unit}).`;
         setTimeout(() => this.stockAlertMessage = '', 4000);
       }
     }
@@ -497,11 +496,14 @@ export class PosCheckoutComponent implements OnInit {
 
   public clearCart() {
     this.cart = [];
+    this.customerName = '';
+    this.customerPhone = '';
+    this.cashPaid = 0;
+    this.discountValue = 0;
+    this.discountType = 'percent';
+    this.stockAlertMessage = '';
     this.persistCart();
   }
-
-  public discountType: 'percent' | 'nominal' = 'percent';
-  public discountValue = 0;
 
   public setDiscountPreset(percent: number) {
     this.discountType = 'percent';
@@ -520,7 +522,7 @@ export class PosCheckoutComponent implements OnInit {
   public getDiscountAmount(): number {
     const subtotal = this.getSubtotal();
     const val = Number(this.discountValue) || 0;
-    if (val <= 0) return 0;
+    if (val <= 0 || subtotal <= 0) return 0;
     if (this.discountType === 'percent') {
       return Math.round((subtotal * Math.min(100, val)) / 100);
     } else {
@@ -529,7 +531,9 @@ export class PosCheckoutComponent implements OnInit {
   }
 
   public getTotalPay(): number {
-    return Math.max(0, this.getSubtotal() - this.getDiscountAmount());
+    const subtotal = this.getSubtotal();
+    const discount = this.getDiscountAmount();
+    return Math.max(0, subtotal - discount);
   }
 
   public getPointsEarned(): number {
@@ -564,7 +568,12 @@ export class PosCheckoutComponent implements OnInit {
 
     const user = this.getCurrentUser();
     const timestampStr = new Date().toLocaleString('id-ID') + ' WIB';
+    const subtotal = this.getSubtotal();
+    const discount = this.getDiscountAmount();
     const total = this.getTotalPay();
+
+    // Deep copy cart snapshot for transaction receipt
+    const snapshotItems: CartItem[] = JSON.parse(JSON.stringify(this.cart));
 
     // 1. Create Sale Transaction record
     const sale: SaleTransaction = {
@@ -574,10 +583,10 @@ export class PosCheckoutComponent implements OnInit {
       cashierName: user?.name || 'Kasir',
       customerName: this.customerName || 'Pelanggan Toko',
       customerPhone: this.customerPhone || '-',
-      items: [...this.cart],
-      subtotal: total,
-      discountPercent: 0,
-      discountAmount: 0,
+      items: snapshotItems,
+      subtotal: subtotal,
+      discountPercent: this.discountType === 'percent' ? this.discountValue : 0,
+      discountAmount: discount,
       totalAmount: total,
       paymentMethod: this.paymentMethod,
       cashPaid: Number(this.cashPaid) || total,
@@ -587,7 +596,7 @@ export class PosCheckoutComponent implements OnInit {
 
     // 2. Batch stock updates & audit logs
     const updatedProducts: Product[] = [];
-    this.cart.forEach(item => {
+    snapshotItems.forEach(item => {
       const prod = this.allProducts.find(p => p.id === item.product.id);
       if (prod) {
         const newStock = Math.max(0, prod.stock - item.quantity);
@@ -632,17 +641,17 @@ export class PosCheckoutComponent implements OnInit {
     }
 
     // Rich Itemized POS Sale Notification
-    const itemLines = this.cart.map(i => `  • ${i.product.name} (x${i.quantity}) = ${this.formatIDR(i.product.price * i.quantity)}`).join('\n');
+    const itemLines = snapshotItems.map(i => `  • ${i.product.name} (x${i.quantity}) = ${this.formatIDR(i.product.price * i.quantity)}`).join('\n');
     const custInfo = this.customerName ? `${this.customerName} (${this.customerPhone || '-'})` : 'Pelanggan Umum';
-    const discInfo = this.getDiscountAmount() > 0 ? `\n🏷️ Diskon Promo: -${this.formatIDR(this.getDiscountAmount())}` : '';
+    const discInfo = discount > 0 ? `\n🏷️ Diskon Promo: -${this.formatIDR(discount)}` : '';
     const cashInfo = this.paymentMethod === 'Tunai' ? `\n💵 Tunai Diterima: ${this.formatIDR(this.cashPaid || total)} | Kembalian: ${this.formatIDR(this.getCashChange())}` : '';
 
     const detailedSaleMsg = 
       `👤 Pembeli: ${custInfo}\n` +
       `💳 Metode Pembayaran: ${this.paymentMethod.toUpperCase()}\n\n` +
-      `🛒 Rincian Barang (${this.cart.length} Jenis):\n${itemLines}\n` +
+      `🛒 Rincian Barang (${snapshotItems.length} Jenis):\n${itemLines}\n` +
       `----------------------------------------\n` +
-      `💵 Subtotal: ${this.formatIDR(this.getSubtotal())}${discInfo}\n` +
+      `💵 Subtotal: ${this.formatIDR(subtotal)}${discInfo}\n` +
       `💰 TOTAL AKHIR: ${this.formatIDR(total)}${cashInfo}`;
 
     this.notificationService.sendNotification({
@@ -658,10 +667,17 @@ export class PosCheckoutComponent implements OnInit {
 
     this.lastSale = sale;
     this.completeCheckout.emit(sale);
+
+    // Clean POS Reset for Next Transaction
     this.cart = [];
-    this.persistCart();
+    this.customerName = '';
+    this.customerPhone = '';
     this.cashPaid = 0;
+    this.discountValue = 0;
+    this.discountType = 'percent';
+    this.stockAlertMessage = '';
     this.transactionNumber = `POS-${Date.now().toString().slice(-6)}`;
+    this.persistCart();
   }
 
   public formatIDR(val: number): string {
