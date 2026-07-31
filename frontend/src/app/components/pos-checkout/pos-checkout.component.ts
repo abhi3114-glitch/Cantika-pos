@@ -130,18 +130,26 @@ import { IconComponent } from '../icon/icon.component';
           </div>
 
           <!-- Line Items List -->
-          <div class="space-y-2 max-h-[200px] overflow-y-auto pr-1">
-            <div *ngFor="let item of cart; let idx = index" class="p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
-              <div class="flex-1 pr-2">
+          <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+            <div *ngFor="let item of cart; let idx = index" class="p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs gap-2">
+              <div class="flex-1 min-w-0">
                 <div class="font-semibold text-slate-900 dark:text-white line-clamp-1 text-[11px]">{{ item.product.name }}</div>
-                <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Rp {{ item.product.price.toLocaleString('id-ID') }}</div>
+                <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                  Rp {{ item.product.price.toLocaleString('id-ID') }} × {{ item.quantity }} = <strong class="text-rose-700 dark:text-rose-400">Rp {{ (item.product.price * item.quantity).toLocaleString('id-ID') }}</strong>
+                </div>
               </div>
 
-              <div class="flex items-center gap-1.5">
-                <button (click)="updateQty(idx, -1)" class="w-5 h-5 rounded bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-center cursor-pointer text-xs">-</button>
-                <span class="font-mono font-bold text-slate-900 dark:text-white w-4 text-center text-xs">{{ item.quantity }}</span>
-                <button (click)="updateQty(idx, 1)" class="w-5 h-5 rounded bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-center cursor-pointer text-xs">+</button>
-                <button (click)="removeItem(idx)" class="ml-1 text-slate-400 dark:text-slate-500 hover:text-rose-700 dark:hover:text-rose-400 font-bold cursor-pointer text-xs">✕</button>
+              <div class="flex items-center gap-1 shrink-0">
+                <button (click)="updateQty(idx, -1)" class="w-6 h-6 rounded bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-center cursor-pointer text-xs shadow-xs">-</button>
+                <input
+                  type="number"
+                  min="1"
+                  [ngModel]="item.quantity"
+                  (ngModelChange)="setDirectQty(idx, $event)"
+                  class="font-mono font-bold text-slate-900 dark:text-white w-11 text-center text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded py-0.5"
+                />
+                <button (click)="updateQty(idx, 1)" class="w-6 h-6 rounded bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-center cursor-pointer text-xs shadow-xs">+</button>
+                <button (click)="removeItem(idx)" class="ml-1 text-slate-400 dark:text-slate-500 hover:text-rose-700 dark:hover:text-rose-400 font-bold cursor-pointer text-xs p-1">✕</button>
               </div>
             </div>
 
@@ -239,7 +247,7 @@ import { IconComponent } from '../icon/icon.component';
             <!-- Financial Summary Box -->
             <div class="p-3.5 bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl space-y-1.5 text-xs">
               <div class="flex justify-between text-slate-600 dark:text-slate-400 font-medium">
-                <span>Sub-Total ({{ getCartTotalQty() }} items)</span>
+                <span>Subtotal ({{ getCartTotalQty() }} items)</span>
                 <span class="font-mono font-bold text-slate-900 dark:text-white">Rp {{ getSubtotal().toLocaleString('id-ID') }}</span>
               </div>
 
@@ -260,12 +268,12 @@ import { IconComponent } from '../icon/icon.component';
                 </div>
 
                 <div class="flex justify-between items-center pt-0.5">
-                  <span class="font-bold text-slate-700 dark:text-slate-300">Return / Change:</span>
+                  <span class="font-bold text-slate-700 dark:text-slate-300 font-heading">Return / Change:</span>
                   <span *ngIf="getCashPaidNumber() >= getTotalPay()" class="font-mono font-black text-emerald-600 dark:text-emerald-400 text-base">
                     Rp {{ getCashChange().toLocaleString('id-ID') }}
                   </span>
                   <span *ngIf="getCashPaidNumber() < getTotalPay()" class="font-mono font-black text-rose-600 dark:text-rose-400 text-xs">
-                    Kurang Rp {{ (getTotalPay() - getCashPaidNumber()).toLocaleString('id-ID') }}
+                    Less than Rp {{ (getTotalPay() - getCashPaidNumber()).toLocaleString('id-ID') }}
                   </span>
                 </div>
               </div>
@@ -278,7 +286,7 @@ import { IconComponent } from '../icon/icon.component';
               class="w-full py-3.5 rounded-lg bg-rose-900 hover:bg-rose-950 dark:bg-rose-800 dark:hover:bg-rose-900 text-white font-bold text-sm shadow-xs tracking-wide uppercase disabled:opacity-40 cursor-pointer transition-colors flex items-center justify-center gap-2"
             >
               <app-icon name="shopping-bag" size="18" class="text-white"></app-icon>
-              <span>CHARGE &nbsp; Rp {{ getTotalPay().toLocaleString('id-ID') }}</span>
+              <span>CHARGE RP. {{ getTotalPay().toLocaleString('id-ID') }}</span>
             </button>
 
             <!-- Success Receipt Modal Notification -->
@@ -345,7 +353,10 @@ export class PosCheckoutComponent implements OnInit {
         try {
           const items = JSON.parse(saved);
           if (Array.isArray(items)) {
-            this.cart = items;
+            this.cart = items.map((i: any) => ({
+              product: i.product,
+              quantity: Math.max(1, Math.floor(Number(i.quantity) || 1))
+            }));
           }
         } catch (e) {}
       }
@@ -442,7 +453,7 @@ export class PosCheckoutComponent implements OnInit {
   }
 
   public getCartTotalQty(): number {
-    return this.cart.reduce((sum, item) => sum + item.quantity, 0);
+    return this.cart.reduce((sum, item) => sum + Math.max(1, Math.floor(Number(item.quantity) || 1)), 0);
   }
 
   public addToCart(product: Product) {
@@ -453,9 +464,11 @@ export class PosCheckoutComponent implements OnInit {
     const existing = this.cart.find(c => c.product.id === latestProd.id);
 
     if (existing) {
-      existing.quantity += 1;
-      if (existing.quantity > latestProd.stock) {
-        this.stockAlertMessage = `⚠️ System Stock Notice: "${latestProd.name}" quantity (${existing.quantity}) exceeds recorded system stock (${latestProd.stock} ${latestProd.unit}). Item added to sale.`;
+      const currentQty = Math.max(1, Math.floor(Number(existing.quantity) || 1));
+      const nextQty = currentQty + 1;
+      existing.quantity = nextQty;
+      if (nextQty > latestProd.stock) {
+        this.stockAlertMessage = `⚠️ System Stock Notice: "${latestProd.name}" quantity (${nextQty}) exceeds recorded system stock (${latestProd.stock} ${latestProd.unit}). Item added to sale.`;
         setTimeout(() => this.stockAlertMessage = '', 4000);
       }
     } else {
@@ -472,7 +485,8 @@ export class PosCheckoutComponent implements OnInit {
   public updateQty(index: number, delta: number) {
     const item = this.cart[index];
     if (!item) return;
-    const newQty = item.quantity + delta;
+    const currentQty = Math.max(1, Math.floor(Number(item.quantity) || 1));
+    const newQty = currentQty + delta;
 
     if (newQty <= 0) {
       this.cart.splice(index, 1);
@@ -483,6 +497,20 @@ export class PosCheckoutComponent implements OnInit {
         this.stockAlertMessage = `⚠️ System Stock Notice: "${latestProd.name}" quantity (${newQty}) exceeds recorded system stock (${latestProd.stock} ${latestProd.unit}).`;
         setTimeout(() => this.stockAlertMessage = '', 4000);
       }
+    }
+    this.cart = [...this.cart];
+    this.persistCart();
+  }
+
+  public setDirectQty(index: number, val: any) {
+    const item = this.cart[index];
+    if (!item) return;
+    const num = Math.max(1, Math.floor(Number(val) || 1));
+    item.quantity = num;
+    const latestProd = this.allProducts.find(p => p.id === item.product.id) || item.product;
+    if (num > latestProd.stock) {
+      this.stockAlertMessage = `⚠️ System Stock Notice: "${latestProd.name}" quantity (${num}) exceeds recorded system stock (${latestProd.stock} ${latestProd.unit}).`;
+      setTimeout(() => this.stockAlertMessage = '', 4000);
     }
     this.cart = [...this.cart];
     this.persistCart();
@@ -514,7 +542,7 @@ export class PosCheckoutComponent implements OnInit {
     if (!this.cart || this.cart.length === 0) return 0;
     return this.cart.reduce((sum, item) => {
       const price = Number(item.product?.price) || 0;
-      const qty = Number(item.quantity) || 0;
+      const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
       return sum + (price * qty);
     }, 0);
   }
@@ -573,7 +601,10 @@ export class PosCheckoutComponent implements OnInit {
     const total = this.getTotalPay();
 
     // Deep copy cart snapshot for transaction receipt
-    const snapshotItems: CartItem[] = JSON.parse(JSON.stringify(this.cart));
+    const snapshotItems: CartItem[] = JSON.parse(JSON.stringify(this.cart.map(i => ({
+      product: i.product,
+      quantity: Math.max(1, Math.floor(Number(i.quantity) || 1))
+    }))));
 
     // 1. Create Sale Transaction record
     const sale: SaleTransaction = {
@@ -599,7 +630,8 @@ export class PosCheckoutComponent implements OnInit {
     snapshotItems.forEach(item => {
       const prod = this.allProducts.find(p => p.id === item.product.id);
       if (prod) {
-        const newStock = Math.max(0, prod.stock - item.quantity);
+        const itemQty = Math.max(1, Math.floor(Number(item.quantity) || 1));
+        const newStock = Math.max(0, prod.stock - itemQty);
         updatedProducts.push({
           ...prod,
           stock: newStock
@@ -617,7 +649,7 @@ export class PosCheckoutComponent implements OnInit {
           productSku: prod.sku,
           fieldChanged: `Penjualan POS [${this.transactionNumber}]`,
           oldValue: `${prod.stock} pcs`,
-          newValue: `${newStock} pcs (-${item.quantity})`
+          newValue: `${newStock} pcs (-${itemQty})`
         });
 
         // Low stock alert trigger
