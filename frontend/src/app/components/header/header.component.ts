@@ -30,6 +30,21 @@ import { IconComponent } from '../icon/icon.component';
               <span class="px-2 py-0.5 rounded bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 text-[10px] uppercase font-bold border border-rose-200 dark:border-rose-900 font-mono">
                 POS ENTERPRISE
               </span>
+
+              <!-- Live Online/Offline Network Status Indicator -->
+              <div 
+                class="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-tight border font-mono transition-all"
+                [class]="isOnline 
+                  ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' 
+                  : 'bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'"
+                [title]="isOnline ? 'Terkoneksi Online ke Cloud Database MongoDB Atlas' : 'Mode Offline: Menggunakan Local Vault Terenkripsi'"
+              >
+                <span class="relative flex h-2 w-2">
+                  <span *ngIf="isOnline" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2" [class]="isOnline ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                </span>
+                <span>{{ isOnline ? 'Online (MongoDB Cloud)' : 'Offline Vault Mode' }}</span>
+              </div>
             </div>
             <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wide block mt-0.5">
               Integrated Inventory & Point of Sale System
@@ -145,6 +160,7 @@ export class HeaderComponent {
   @Output() openGlobalMarginModal = new EventEmitter<void>();
 
   public currentLang$: Observable<Language>;
+  public isOnline: boolean = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
   constructor(
     public productService: ProductService,
@@ -154,6 +170,11 @@ export class HeaderComponent {
     public themeService: ThemeService
   ) {
     this.currentLang$ = this.langService.currentLang$;
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => this.isOnline = true);
+      window.addEventListener('offline', () => this.isOnline = false);
+    }
   }
 
   public toggleLang() {

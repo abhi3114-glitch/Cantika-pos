@@ -646,23 +646,26 @@ export class AdminPosComponent implements OnInit {
   }
 
   public exportInventoryCSV() {
-    const headers = ['SKU', 'Barcode', 'Nama Produk', 'Vendor', 'Harga Modal', 'Harga Jual', 'Stok'];
+    const headers = ['SKU', 'Barcode', 'Nama Produk', 'Vendor / Brand', 'Harga Modal (IDR)', 'Harga Jual (IDR)', 'Stok Sisa'];
     const rows = this.products.map(p => [
-      `"${p.sku}"`,
-      `"${p.barcode}"`,
-      `"${p.name.replace(/"/g, '""')}"`,
-      `"${p.vendor}"`,
-      p.buyingPrice,
-      p.price,
-      p.stock
+      `"${p.sku || ''}"`,
+      `"${p.barcode || ''}"`,
+      `"${(p.name || '').replace(/"/g, '""')}"`,
+      `"${p.vendor || ''}"`,
+      p.buyingPrice || 0,
+      p.price || 0,
+      p.stock || 0
     ]);
 
-    const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const uri = encodeURI(csv);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = uri;
-    link.download = `Katalog_Stok_Cantika_${new Date().toISOString().slice(0, 10)}.csv`;
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Katalog_Stok_Cantika_Excel_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   }
 
   public handleDeleteProduct(p: Product) {
