@@ -25,45 +25,68 @@ import { IconComponent } from '../icon/icon.component';
       
       <!-- Top Metrics Dashboard Bar -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1 transition-colors">
+        
+        <!-- Metric 1: Total SKU -->
+        <div class="bg-white dark:bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all space-y-1.5 group">
           <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span class="text-[10px] uppercase font-semibold tracking-wide">{{ 'totalSKU' | translate }}</span>
-            <app-icon name="box" size="15" class="text-slate-400 dark:text-slate-500"></app-icon>
+            <span class="text-[10px] uppercase font-bold tracking-wider">{{ 'totalSKU' | translate }}</span>
+            <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-xs group-hover:scale-110 transition-transform">
+              <app-icon name="box" size="14"></app-icon>
+            </div>
           </div>
-          <div class="text-lg md:text-xl font-bold font-heading tracking-tight text-slate-900 dark:text-white">{{ filteredProducts.length }} Items</div>
-          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{{ 'fromTotalCatalog' | translate }} {{ products.length }} {{ 'totalCatalogSuffix' | translate }}</div>
+          <div class="text-xl font-extrabold font-heading tracking-tight text-slate-900 dark:text-white">{{ filteredProducts.length }} Items</div>
+          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium flex items-center justify-between">
+            <span>{{ 'fromTotalCatalog' | translate }} {{ products.length }} {{ 'totalCatalogSuffix' | translate }}</span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-bold font-mono">100% Cloud</span>
+          </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1 transition-colors">
+        <!-- Metric 2: Low Stock -->
+        <div class="bg-white dark:bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 shadow-xs hover:border-amber-300 dark:hover:border-amber-800 transition-all space-y-1.5 group">
           <div class="flex items-center justify-between text-amber-600 dark:text-amber-400">
-            <span class="text-[10px] uppercase font-semibold tracking-wide text-slate-500 dark:text-slate-400">{{ 'lowStockTitle' | translate }}</span>
-            <app-icon name="tag" size="15" class="text-amber-500"></app-icon>
+            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400">{{ 'lowStockTitle' | translate }}</span>
+            <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold text-xs group-hover:scale-110 transition-transform">
+              <app-icon name="tag" size="14"></app-icon>
+            </div>
           </div>
-          <div class="text-lg md:text-xl font-bold font-heading tracking-tight text-amber-600 dark:text-amber-400">{{ lowStockItems.length }} Items</div>
-          <div class="text-[10px] text-amber-700 dark:text-amber-300 font-medium">{{ 'needsRestocking' | translate }}</div>
+          <div class="text-xl font-extrabold font-heading tracking-tight text-amber-600 dark:text-amber-400">{{ lowStockItems.length }} Items</div>
+          <div class="text-[10px] text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1">
+            <span>⚠️ {{ 'needsRestocking' | translate }}</span>
+          </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1 transition-colors">
+        <!-- Metric 3: Total Capital Valuation -->
+        <div class="bg-white dark:bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-800 transition-all space-y-1.5 group">
           <div class="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-            <span class="text-[10px] uppercase font-semibold tracking-wide text-slate-500 dark:text-slate-400">{{ 'totalValuation' | translate }}</span>
-            <app-icon name="shield" size="15" class="text-emerald-500"></app-icon>
+            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400">{{ 'totalValuation' | translate }}</span>
+            <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xs group-hover:scale-110 transition-transform">
+              <app-icon name="shield" size="14"></app-icon>
+            </div>
           </div>
-          <div class="text-base md:text-lg font-bold font-heading font-mono tracking-tight text-slate-900 dark:text-white">
+          <div class="text-lg md:text-xl font-black font-mono tracking-tight text-slate-900 dark:text-white">
             {{ isOwner() ? formatIDR(totalCostValuation) : '🔒 Rp ***.*** (Owner Only)' }}
           </div>
-          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{{ 'registeredCapital' | translate }}</div>
+          <div class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <span>🛡️ {{ 'registeredCapital' | translate }}</span>
+          </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1 transition-colors">
-          <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span class="text-[10px] uppercase font-semibold tracking-wide">{{ 'unpaidPayables' | translate }}</span>
-            <app-icon name="file-text" size="15" class="text-slate-400 dark:text-slate-500"></app-icon>
+        <!-- Metric 4: Unpaid Payables -->
+        <div class="bg-white dark:bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-rose-200/80 dark:border-rose-900/40 shadow-xs hover:border-rose-300 dark:hover:border-rose-800 transition-all space-y-1.5 group">
+          <div class="flex items-center justify-between text-rose-600 dark:text-rose-400">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400">{{ 'unpaidPayables' | translate }}</span>
+            <div class="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 flex items-center justify-center font-bold text-xs group-hover:scale-110 transition-transform">
+              <app-icon name="file-text" size="14"></app-icon>
+            </div>
           </div>
-          <div class="text-base md:text-lg font-bold font-heading font-mono tracking-tight text-slate-900 dark:text-white">
+          <div class="text-lg md:text-xl font-black font-mono tracking-tight text-slate-900 dark:text-white">
             {{ isOwner() ? formatIDR(totalUnpaidPayables) : '🔒 Rp ***.*** (Owner Only)' }}
           </div>
-          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{{ getUnpaidRestockCount() }} {{ 'unpaidInvoicesCount' | translate }}</div>
+          <div class="text-[10px] text-rose-700 dark:text-rose-400 font-semibold">
+            {{ getUnpaidRestockCount() }} {{ 'unpaidInvoicesCount' | translate }}
+          </div>
         </div>
+
       </div>
 
       <!-- Top Segment Navigation & Actions Bar -->
