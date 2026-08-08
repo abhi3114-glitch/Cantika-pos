@@ -13,3 +13,7 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 *.log
+*.zip
+desktop/node_modules/
+desktop/dist-desktop/
+Cantika-POS-1Click-Setup.zip
