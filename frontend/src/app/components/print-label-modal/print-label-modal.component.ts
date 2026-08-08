@@ -110,6 +110,33 @@ import { Product } from '../../models/product.model';
               </div>
             </div>
 
+            <!-- Single Parent Product Label Switcher -->
+            <div class="p-3 bg-emerald-950/40 border border-emerald-800/60 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-[11px] font-black uppercase text-emerald-300 tracking-wider">
+                  ✨ Mode Label Cetak
+                </label>
+                <span class="text-[10px] font-bold text-emerald-400 font-mono">
+                  {{ singleParentOnly ? 'Parent Only' : 'Semua Varian' }}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="singleParentOnly"
+                  id="singleParentCheck"
+                  class="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
+                />
+                <label for="singleParentCheck" class="text-xs text-emerald-200 font-bold cursor-pointer">
+                  Single Parent (Tanpa Varian)
+                </label>
+              </div>
+              <p class="text-[10px] text-emerald-400/80 font-medium">
+                Menggabungkan produk varian warna/shade menjadi 1 label induk untuk rak toko.
+              </p>
+            </div>
+
             <!-- Options Controls -->
             <div class="space-y-3 pt-2 border-t border-slate-800">
               <label class="text-[11px] font-black uppercase text-slate-400 tracking-wider">Pengaturan Cetak</label>
@@ -364,11 +391,32 @@ export class PrintLabelModalComponent implements OnInit {
   }
 
   public printCopiesCount = 1;
+  public singleParentOnly = true;
+
+  public extractParentName(p: Product): string {
+    if (!p || !p.name) return '';
+    const raw = p.name.trim();
+
+    if (p.option1Value && p.option1Value.trim()) {
+      return raw.replace(new RegExp(`\\s*-\\s*${p.option1Value.trim()}$`, 'i'), '').trim();
+    }
+
+    const parts = raw.split(/\s+-\s+/);
+    if (parts.length >= 3) {
+      return parts.slice(0, parts.length - 1).join(' - ').trim();
+    } else if (parts.length === 2) {
+      const p2 = parts[1].trim();
+      if (/^(shade|no|color|warna|size|ml|gr|pcs|\d+)/i.test(p2) || (p2.length <= 20 && !p2.includes(' '))) {
+        return parts[0].trim();
+      }
+    }
+    return raw;
+  }
 
   get displayProducts(): Product[] {
     if (!this.products) return [];
     
-    const filtered = this.products.filter(p => {
+    let filtered = this.products.filter(p => {
       const matchVendor = this.selectedVendor === 'ALL' || p.vendor === this.selectedVendor;
       const matchSearch = !this.searchTerm || 
         p.name.toLowerCase().includes(this.searchTerm.toLowerCase()) || 
@@ -377,13 +425,30 @@ export class PrintLabelModalComponent implements OnInit {
       return matchVendor && matchSearch;
     });
 
+    if (this.singleParentOnly) {
+      const seenParents = new Set<string>();
+      const parentList: Product[] = [];
+
+      filtered.forEach(p => {
+        const parentName = this.extractParentName(p);
+        if (!seenParents.has(parentName)) {
+          seenParents.add(parentName);
+          parentList.push({
+            ...p,
+            name: parentName
+          });
+        }
+      });
+      filtered = parentList;
+    }
+
     const copies = Math.max(1, Math.min(500, this.printCopiesCount || 1));
     const result: Product[] = [];
 
-    const baseItems = filtered.slice(0, 50);
+    const baseItems = filtered.slice(0, 80);
     baseItems.forEach(item => {
       for (let i = 0; i < copies; i++) {
-        if (result.length < 300) {
+        if (result.length < 500) {
           result.push(item);
         }
       }
