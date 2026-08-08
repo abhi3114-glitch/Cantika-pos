@@ -10,6 +10,18 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { Product, CartItem, SaleTransaction } from '../../models/product.model';
 import { IconComponent } from '../icon/icon.component';
 
+export interface GroupedProductTile {
+  isGroup: boolean;
+  baseName: string;
+  vendor: string;
+  minPrice: number;
+  maxPrice: number;
+  totalStock: number;
+  unit: string;
+  variants: { product: Product; variantName: string }[];
+  singleProduct?: Product;
+}
+
 @Component({
   selector: 'app-pos-checkout',
   standalone: true,
@@ -387,13 +399,6 @@ import { IconComponent } from '../icon/icon.component';
         <div class="text-sm font-black font-mono text-emerald-400">Total: Rp {{ getTotalPay().toLocaleString('id-ID') }}</div>
       </div>
       <button
-    <!-- Sticky Mobile Floating Cart Bar (Visible on mobile screens when cart has items) -->
-    <div *ngIf="cart.length > 0" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 border-t border-slate-800 shadow-2xl flex items-center justify-between gap-3">
-      <div>
-        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ getCartTotalQty() }} {{ getCartTotalQty() === 1 ? 'item' : 'items' }} in sale</div>
-        <div class="text-sm font-black font-mono text-emerald-400">Total: Rp {{ getTotalPay().toLocaleString('id-ID') }}</div>
-      </div>
-      <button
         (click)="scrollToCart()"
         class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
       >
@@ -412,6 +417,7 @@ export class PosCheckoutComponent implements OnInit {
   public groupedTiles: GroupedProductTile[] = [];
   public selectedGroupForVariantModal: GroupedProductTile | null = null;
   public groupVariantsEnabled = true;
+  public cart: CartItem[] = [];
   public customerName = '';
   public customerPhone = '';
   public paymentMethod: 'Tunai' | 'QRIS' | 'Transfer Bank' | 'COD' = 'Tunai';
@@ -834,7 +840,7 @@ export class PosCheckoutComponent implements OnInit {
     const total = this.getTotalPay();
 
     // Deep copy cart snapshot for transaction receipt
-    const snapshotItems: CartItem[] = JSON.parse(JSON.stringify(this.cart.map(i => ({
+    const snapshotItems: CartItem[] = JSON.parse(JSON.stringify(this.cart.map((i: CartItem) => ({
       product: i.product,
       quantity: Math.max(1, Math.floor(Number(i.quantity) || 1))
     }))));
