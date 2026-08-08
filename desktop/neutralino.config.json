@@ -1,0 +1,29 @@
+{
+  "applicationId": "com.cantikabeautystore.pos",
+  "defaultMode": "window",
+  "port": 0,
+  "url": "https://cantika-pos.vercel.app",
+  "modes": {
+    "window": {
+      "title": "Cantika Beauty Store | Enterprise Desktop POS",
+      "width": 1366,
+      "height": 850,
+      "minWidth": 1024,
+      "minHeight": 720,
+      "fullScreen": false,
+      "alwaysOnTop": false,
+      "icon": "/assets/icon.png",
+      "enableInspector": false,
+      "borderless": false,
+      "maximize": true,
+      "hidden": false,
+      "resizable": true
+    }
+  },
+  "cli": {
+    "binaryName": "Cantika-POS-Desktop",
+    "resourcesPath": "/resources/",
+    "extensionsPath": "/extensions/",
+    "clientLibrary": "/resources/js/neutralino.js"
+  }
+}
