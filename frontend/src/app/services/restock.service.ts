@@ -7,8 +7,9 @@ import { SecurityService } from './security.service';
   providedIn: 'root'
 })
 export class RestockService {
-  private apiUrl = (typeof window !== 'undefined' && (window as any).CANTIKA_API_URL) 
-    || 'http://localhost:3000/api';
+  private get apiUrl(): string {
+    return this.securityService.getApiUrl();
+  }
 
   private restockOrdersSubject = new BehaviorSubject<RestockOrder[]>([]);
   public restockOrders$ = this.restockOrdersSubject.asObservable();

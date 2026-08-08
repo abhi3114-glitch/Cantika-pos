@@ -7,8 +7,9 @@ import { SecurityService } from './security.service';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = (typeof window !== 'undefined' && (window as any).CANTIKA_API_URL) 
-    || 'http://localhost:3000/api';
+  private get apiUrl(): string {
+    return this.securityService.getApiUrl();
+  }
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
