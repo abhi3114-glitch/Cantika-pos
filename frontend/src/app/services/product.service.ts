@@ -35,6 +35,10 @@ export class ProductService {
   public filters$ = this.filtersSubject.asObservable();
 
   constructor(private securityService: SecurityService) {
+    const cached = this.securityService.getSecureStorage('cantika_products_vault', []);
+    if (Array.isArray(cached) && cached.length > 0) {
+      this.productsSubject.next(cached);
+    }
     this.loadProducts();
     this.setupAutoSync();
   }

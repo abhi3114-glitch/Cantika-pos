@@ -492,8 +492,12 @@ export class AdminPosComponent implements OnInit {
       const uniqueVendors: string[] = Array.from(new Set(prods.map((p: Product) => p.vendor).filter(Boolean))).sort() as string[];
       this.brandList = ['Semua Brand', ...uniqueVendors];
       this.applyFilter(false);
-      this.lowStockItems = prods.filter((p: Product) => p.stock <= 2);
-      this.totalCostValuation = prods.reduce((sum: number, p: Product) => sum + (p.buyingPrice * p.stock), 0);
+      this.lowStockItems = prods.filter((p: Product) => (Number(p.stock) || 0) <= 2);
+      this.totalCostValuation = prods.reduce((sum: number, p: Product) => {
+        const cost = Number(p.buyingPrice) || 0;
+        const qty = Number(p.stock) || 0;
+        return sum + (cost * qty);
+      }, 0);
     });
 
     this.auditService.auditLogs$.subscribe(logs => {
