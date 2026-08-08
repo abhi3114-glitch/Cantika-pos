@@ -10,8 +10,9 @@ cd /d "%~dp0desktop"
 if not exist "node_modules\electron" (
     echo Installing Desktop App dependencies...
     call npm install electron@^31.0.0 --save-dev
+    node node_modules/electron/install.js
 )
 
 echo Starting Desktop Application Window...
-call npm start
+call npx electron .
 pause
