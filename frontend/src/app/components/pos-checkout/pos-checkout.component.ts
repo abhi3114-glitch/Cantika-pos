@@ -42,7 +42,7 @@ import { IconComponent } from '../icon/icon.component';
         <!-- LEFT COLUMN: Product Catalog Grid (Shopify POS Tiles) -->
         <div class="lg:col-span-7 space-y-3">
           
-          <!-- Search Bar -->
+          <!-- Search Bar & Variant Grouping Toggle -->
           <div class="flex items-center gap-2">
             <div class="relative flex-1">
               <input
@@ -65,11 +65,13 @@ import { IconComponent } from '../icon/icon.component';
               </button>
             </div>
 
+            <!-- Variant Grouping Toggle Button -->
             <button
-              (click)="filterProducts(); onSearchEnter()"
-              class="px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-rose-900 text-white font-bold text-xs hover:bg-slate-800 dark:hover:bg-rose-950 cursor-pointer transition-colors"
+              (click)="toggleVariantGrouping()"
+              [class]="groupVariantsEnabled ? 'px-3 py-2.5 rounded-xl bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-900 font-bold text-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs' : 'px-3 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-medium text-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap'"
+              title="Gabungkan produk varian (warna/aroma) menjadi 1 kartu"
             >
-              Search
+              <span>{{ groupVariantsEnabled ? '✨ Varian Gabung' : '📋 Semua Varian' }}</span>
             </button>
           </div>
 
@@ -79,30 +81,39 @@ import { IconComponent } from '../icon/icon.component';
             <button (click)="stockAlertMessage = ''" class="ml-2 font-mono font-bold text-slate-900 hover:text-white cursor-pointer">✕</button>
           </div>
 
-          <!-- Product Tiles Grid (Shopify POS Card System) -->
+          <!-- Product Tiles Grid (Shopify POS Card System with Variant Grouping) -->
           <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-3 gap-2.5 max-h-[560px] overflow-y-auto pr-1">
             <div
-              *ngFor="let p of searchResults"
-              (click)="addToCart(p)"
+              *ngFor="let tile of groupedTiles"
+              (click)="onTileClick(tile)"
               class="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-rose-700 dark:hover:border-rose-600 rounded-xl shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between space-y-2 group active:scale-[0.98]"
             >
               <div>
-                <div class="flex items-center justify-between text-[10px] mb-1">
-                  <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold uppercase text-[9px] truncate max-w-[100px]">{{ getVendorDisplay(p) }}</span>
-                  <span [class]="p.stock === 0 ? 'text-rose-600 dark:text-rose-400 font-bold text-[9px]' : (p.stock <= 2 ? 'text-amber-600 dark:text-amber-400 font-bold text-[9px]' : 'text-slate-400 dark:text-slate-500 text-[9px]')">
-                    {{ p.stock === 0 ? 'Out of Stock' : (p.stock + ' ' + p.unit) }}
+                <div class="flex items-center justify-between text-[10px] mb-1 gap-1">
+                  <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold uppercase text-[9px] truncate max-w-[90px]">{{ tile.vendor }}</span>
+                  
+                  <span *ngIf="tile.isGroup" class="px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-extrabold text-[9px] whitespace-nowrap border border-rose-200 dark:border-rose-900">
+                    ✨ {{ tile.variants.length }} Varian
+                  </span>
+                  <span *ngIf="!tile.isGroup" [class]="tile.totalStock === 0 ? 'text-rose-600 dark:text-rose-400 font-bold text-[9px]' : (tile.totalStock <= 2 ? 'text-amber-600 dark:text-amber-400 font-bold text-[9px]' : 'text-slate-400 dark:text-slate-500 text-[9px]')">
+                    {{ tile.totalStock === 0 ? 'Stok Habis' : (tile.totalStock + ' ' + tile.unit) }}
                   </span>
                 </div>
-                <h4 class="font-semibold text-slate-900 dark:text-slate-100 text-xs line-clamp-2 leading-tight group-hover:text-rose-800 dark:group-hover:text-rose-400 transition-colors">{{ p.name }}</h4>
+                <h4 class="font-semibold text-slate-900 dark:text-slate-100 text-xs line-clamp-2 leading-tight group-hover:text-rose-800 dark:group-hover:text-rose-400 transition-colors">{{ tile.baseName }}</h4>
               </div>
 
               <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-2">
-                <span class="font-bold text-slate-900 dark:text-white text-xs font-mono">Rp {{ p.price.toLocaleString('id-ID') }}</span>
-                <span class="w-6 h-6 rounded-md bg-slate-900 dark:bg-slate-800 group-hover:bg-rose-800 text-white flex items-center justify-center font-bold text-xs shadow-xs transition-colors">+</span>
+                <span class="font-bold text-slate-900 dark:text-white text-xs font-mono">
+                  <span *ngIf="tile.minPrice === tile.maxPrice">Rp {{ tile.minPrice.toLocaleString('id-ID') }}</span>
+                  <span *ngIf="tile.minPrice !== tile.maxPrice">Rp {{ tile.minPrice.toLocaleString('id-ID') }} - {{ tile.maxPrice.toLocaleString('id-ID') }}</span>
+                </span>
+                <span [class]="tile.isGroup ? 'px-2 py-0.5 rounded-md bg-rose-900 text-white font-bold text-[10px]' : 'w-6 h-6 rounded-md bg-slate-900 dark:bg-slate-800 group-hover:bg-rose-800 text-white flex items-center justify-center font-bold text-xs shadow-xs transition-colors'">
+                  {{ tile.isGroup ? 'Pilih' : '+' }}
+                </span>
               </div>
             </div>
 
-            <div *ngIf="searchResults.length === 0" class="col-span-3 p-8 bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center space-y-3">
+            <div *ngIf="groupedTiles.length === 0" class="col-span-3 p-8 bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center space-y-3">
               <div class="text-slate-500 dark:text-slate-400 font-medium text-xs">
                 No registered items match <span class="font-mono text-rose-800 dark:text-rose-400 font-bold">"{{ searchTerm }}"</span>
               </div>
@@ -307,6 +318,75 @@ import { IconComponent } from '../icon/icon.component';
 
       </div>
     </div>
+    <!-- Variant Selection Modal Popup -->
+    <div *ngIf="selectedGroupForVariantModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 text-[10px] uppercase font-extrabold border border-rose-200 dark:border-rose-900">
+                {{ selectedGroupForVariantModal.vendor }}
+              </span>
+              <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold font-mono">
+                {{ selectedGroupForVariantModal.variants.length }} Varian Tersedia
+              </span>
+            </div>
+            <h3 class="text-sm font-bold font-heading text-slate-900 dark:text-white mt-1">
+              {{ selectedGroupForVariantModal.baseName }}
+            </h3>
+          </div>
+          <button (click)="selectedGroupForVariantModal = null" class="text-slate-400 hover:text-slate-700 dark:hover:text-white text-lg p-1 cursor-pointer">✕</button>
+        </div>
+
+        <!-- Variant Options List -->
+        <div class="space-y-2">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pilih Varian / Warna / Aroma:</div>
+          
+          <div
+            *ngFor="let item of selectedGroupForVariantModal.variants"
+            (click)="selectVariantItem(item.product)"
+            class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-rose-600 dark:hover:border-rose-500 bg-slate-50 dark:bg-slate-800/80 hover:bg-rose-50/50 dark:hover:bg-rose-950/40 cursor-pointer transition-all flex items-center justify-between gap-3 group"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-xs text-slate-900 dark:text-white group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors">
+                {{ item.variantName }}
+              </div>
+              <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 flex items-center gap-2">
+                <span>SKU: {{ item.product.sku }}</span>
+                <span *ngIf="item.product.barcode">Barcode: {{ item.product.barcode }}</span>
+              </div>
+            </div>
+
+            <div class="text-right shrink-0">
+              <div class="font-mono font-black text-rose-700 dark:text-rose-400 text-xs">
+                Rp {{ item.product.price.toLocaleString('id-ID') }}
+              </div>
+              <div [class]="item.product.stock === 0 ? 'text-[10px] font-bold text-rose-600' : 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400'">
+                {{ item.product.stock === 0 ? 'Stok Habis' : 'Stok: ' + item.product.stock + ' ' + item.product.unit }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="pt-2 border-t border-slate-100 dark:border-slate-800 text-right">
+          <button (click)="selectedGroupForVariantModal = null" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl hover:bg-slate-300">
+            Tutup
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Sticky Mobile Floating Cart Bar (Visible on mobile screens when cart has items) -->
+    <div *ngIf="cart.length > 0" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 border-t border-slate-800 shadow-2xl flex items-center justify-between gap-3">
+      <div>
+        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ getCartTotalQty() }} {{ getCartTotalQty() === 1 ? 'item' : 'items' }} in sale</div>
+        <div class="text-sm font-black font-mono text-emerald-400">Total: Rp {{ getTotalPay().toLocaleString('id-ID') }}</div>
+      </div>
+      <button
     <!-- Sticky Mobile Floating Cart Bar (Visible on mobile screens when cart has items) -->
     <div *ngIf="cart.length > 0" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 border-t border-slate-800 shadow-2xl flex items-center justify-between gap-3">
       <div>
@@ -329,8 +409,9 @@ export class PosCheckoutComponent implements OnInit {
   public allProducts: Product[] = [];
   public searchResults: Product[] = [];
   public searchTerm = '';
-
-  public cart: CartItem[] = [];
+  public groupedTiles: GroupedProductTile[] = [];
+  public selectedGroupForVariantModal: GroupedProductTile | null = null;
+  public groupVariantsEnabled = true;
   public customerName = '';
   public customerPhone = '';
   public paymentMethod: 'Tunai' | 'QRIS' | 'Transfer Bank' | 'COD' = 'Tunai';
@@ -401,14 +482,12 @@ export class PosCheckoutComponent implements OnInit {
   }
 
   public filterProducts() {
+    let rawMatches: Product[] = [];
     if (!this.searchTerm || !this.searchTerm.trim()) {
-      this.searchResults = this.allProducts.slice(0, 30);
-      return;
-    }
-
-    try {
+      rawMatches = this.allProducts;
+    } else {
       const q = this.searchTerm.toLowerCase().trim();
-      const matches = this.allProducts.filter(p => {
+      rawMatches = this.allProducts.filter(p => {
         if (!p) return false;
         const nameMatch = p.name ? p.name.toLowerCase().includes(q) : false;
         const skuMatch = p.sku ? p.sku.toLowerCase().includes(q) : false;
@@ -423,14 +502,123 @@ export class PosCheckoutComponent implements OnInit {
       if (exactBarcode && exactBarcode.stock > 0 && q.length >= 8) {
         this.addToCart(exactBarcode);
         this.searchTerm = '';
-        this.searchResults = this.allProducts.slice(0, 30);
+        this.filterProducts();
         return;
       }
-
-      this.searchResults = matches.slice(0, 30);
-    } catch (err) {
-      console.error('Error filtering products:', err);
     }
+
+    this.searchResults = rawMatches;
+
+    if (this.groupVariantsEnabled) {
+      this.groupedTiles = this.getGroupedProductTiles(rawMatches).slice(0, 36);
+    } else {
+      this.groupedTiles = rawMatches.slice(0, 36).map(p => ({
+        isGroup: false,
+        baseName: p.name,
+        vendor: this.getVendorDisplay(p),
+        minPrice: p.price,
+        maxPrice: p.price,
+        totalStock: p.stock,
+        unit: p.unit || 'pcs',
+        variants: [{ product: p, variantName: 'Default' }],
+        singleProduct: p
+      }));
+    }
+  }
+
+  public extractParentAndVariant(p: Product): { baseName: string; variantName: string } {
+    if (!p || !p.name) return { baseName: 'BEAUTY PRODUCT', variantName: 'Default' };
+    const rawName = p.name.trim();
+
+    if (p.option1Value && p.option1Value.trim()) {
+      return {
+        baseName: rawName.replace(new RegExp(`\\s*-\\s*${p.option1Value.trim()}$`, 'i'), ''),
+        variantName: p.option1Value.trim()
+      };
+    }
+
+    const parts = rawName.split(/\s+-\s+/);
+    if (parts.length >= 3) {
+      const variantName = parts[parts.length - 1].trim();
+      const baseName = parts.slice(0, parts.length - 1).join(' - ').trim();
+      return { baseName, variantName };
+    } else if (parts.length === 2) {
+      const p2 = parts[1].trim();
+      if (/^(shade|no|color|warna|size|ml|gr|pcs|\d+)/i.test(p2) || (p2.length <= 20 && !p2.includes(' '))) {
+        return { baseName: parts[0].trim(), variantName: p2 };
+      }
+    }
+
+    return { baseName: rawName, variantName: 'Default' };
+  }
+
+  public getGroupedProductTiles(products: Product[]): GroupedProductTile[] {
+    const groupsMap = new Map<string, { product: Product; variantName: string }[]>();
+
+    products.forEach(p => {
+      const { baseName, variantName } = this.extractParentAndVariant(p);
+      if (!groupsMap.has(baseName)) {
+        groupsMap.set(baseName, []);
+      }
+      groupsMap.get(baseName)!.push({ product: p, variantName });
+    });
+
+    const tiles: GroupedProductTile[] = [];
+
+    groupsMap.forEach((variants, baseName) => {
+      if (variants.length === 1) {
+        const p = variants[0].product;
+        tiles.push({
+          isGroup: false,
+          baseName: p.name,
+          vendor: this.getVendorDisplay(p),
+          minPrice: p.price,
+          maxPrice: p.price,
+          totalStock: p.stock,
+          unit: p.unit || 'pcs',
+          variants,
+          singleProduct: p
+        });
+      } else {
+        const prices = variants.map(v => v.product.price);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const totalStock = variants.reduce((sum, v) => sum + (v.product.stock || 0), 0);
+        const vendor = this.getVendorDisplay(variants[0].product);
+        const unit = variants[0].product.unit || 'pcs';
+
+        tiles.push({
+          isGroup: true,
+          baseName,
+          vendor,
+          minPrice,
+          maxPrice,
+          totalStock,
+          unit,
+          variants
+        });
+      }
+    });
+
+    return tiles;
+  }
+
+  public onTileClick(tile: GroupedProductTile) {
+    if (!tile.isGroup && tile.singleProduct) {
+      this.addToCart(tile.singleProduct);
+    } else if (tile.isGroup) {
+      this.selectedGroupForVariantModal = tile;
+    }
+  }
+
+  public selectVariantItem(p: Product) {
+    this.addToCart(p);
+    this.selectedGroupForVariantModal = null;
+  }
+
+  public toggleVariantGrouping() {
+    this.groupVariantsEnabled = !this.groupVariantsEnabled;
+    this.filterProducts();
   }
 
   public quickAddScannedBarcode(barcode: string) {
