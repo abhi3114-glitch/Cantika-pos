@@ -147,6 +147,15 @@ import { IconComponent } from '../icon/icon.component';
         <!-- Quick Action Buttons -->
         <div class="flex items-center gap-2 overflow-x-auto w-full lg:w-auto">
           <button
+            (click)="exportInventoryCSV()"
+            class="py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1.5 transition-all shadow-xs cursor-pointer whitespace-nowrap"
+            title="Download Katalog Stok & Harga ke File Excel"
+          >
+            <app-icon name="file-text" size="13"></app-icon>
+            <span>📥 Export Excel</span>
+          </button>
+
+          <button
             (click)="showPrintLabelModal = true"
             class="btn-secondary py-1.5 px-3 text-[11px]"
             title="Cetak Label & Tag Harga"

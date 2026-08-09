@@ -45,7 +45,17 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
           <h3 class="text-base font-black text-slate-900 font-heading flex items-center gap-2">
             {{ 'topBrandsTitle' | translate }}
           </h3>
-          <span class="text-xs font-bold text-slate-400 font-mono">6 Top Leaderboard</span>
+          <div class="flex items-center gap-2">
+            <button
+              (click)="exportAnalyticsExcel()"
+              class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Download Analisis Omset & Brand ke Excel"
+            >
+              <span>📊</span>
+              <span>Export Laba (Excel)</span>
+            </button>
+            <span class="text-xs font-bold text-slate-400 font-mono hidden sm:inline">6 Top Leaderboard</span>
+          </div>
         </div>
 
         <div class="space-y-4">
@@ -110,5 +120,35 @@ export class AnalyticsComponent implements OnInit {
       currency: 'IDR',
       maximumFractionDigits: 0
     }).format(val);
+  }
+
+  public exportAnalyticsExcel() {
+    const headers = ['Peringkat', 'Nama Brand / Kategori', 'Jumlah SKU Produk', 'Total Nilai Omset Retail (IDR)'];
+    const rows = this.topBrands.map((b, idx) => [
+      idx + 1,
+      `"${b.brand.replace(/"/g, '""')}"`,
+      b.count,
+      b.value
+    ]);
+
+    const summaryRow = ['TOTAL TOKO', '"KESELURUHAN KATALOG"', '-', this.totalRetailValuation];
+    const profitRow = ['POTENSI LABA', '"KEUNTUNGAN BERSIH"', '-', this.totalPotentialProfit];
+
+    const csvContent = '\uFEFF' + [
+      headers.join(','), 
+      ...rows.map(r => r.join(',')),
+      '',
+      summaryRow.join(','),
+      profitRow.join(',')
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Laporan_Omset_Dan_Laba_Cantika_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }
