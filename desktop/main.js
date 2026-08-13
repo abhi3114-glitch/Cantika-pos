@@ -20,9 +20,14 @@ function createMainWindow() {
     }
   });
 
-  // Load Production Live Cloud POS App (with fallback)
+  // Load Production Live Cloud POS App (with local www offline fallback)
   const appUrl = process.env.CANTIKA_POS_URL || 'https://cantika-pos.vercel.app';
-  mainWindow.loadURL(appUrl);
+  mainWindow.loadURL(appUrl).catch(() => {
+    const localIndex = path.join(__dirname, 'www', 'index.html');
+    if (fs.existsSync(localIndex)) {
+      mainWindow.loadFile(localIndex);
+    }
+  });
 
   // Show window smoothly when ready
   mainWindow.once('ready-to-show', () => {
