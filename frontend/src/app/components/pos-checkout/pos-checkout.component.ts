@@ -365,13 +365,13 @@ export interface GroupedProductTile {
           <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pilih Varian / Warna / Aroma:</div>
           
           <div
-            *ngFor="let item of selectedGroupForVariantModal.variants"
-            (click)="selectVariantItem(item.product)"
+            *ngFor="let item of selectedGroupForVariantModal.variants; let idx = index"
+            (click)="selectVariantItem(item.product, getVariantDisplayTitle(item, idx))"
             class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-rose-600 dark:hover:border-rose-500 bg-slate-50 dark:bg-slate-800/80 hover:bg-rose-50/50 dark:hover:bg-rose-950/40 cursor-pointer transition-all flex items-center justify-between gap-3 group"
           >
             <div class="min-w-0 flex-1">
               <div class="font-bold text-xs text-slate-900 dark:text-white group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors">
-                {{ item.variantName }}
+                {{ getVariantDisplayTitle(item, idx) }}
               </div>
               <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 flex items-center gap-2">
                 <span>SKU: {{ item.product.sku }}</span>
@@ -625,8 +625,40 @@ export class PosCheckoutComponent implements OnInit {
     }
   }
 
-  public selectVariantItem(p: Product) {
-    this.addToCart(p);
+  public getVariantDisplayTitle(v: { product: Product; variantName: string }, idx: number): string {
+    if (!v || !v.product) return `Varian #${idx + 1}`;
+    
+    if (v.variantName && v.variantName !== 'Default' && v.variantName.trim()) {
+      return v.variantName.trim();
+    }
+    if (v.product.option1Value && v.product.option1Value.trim()) {
+      return v.product.option1Value.trim();
+    }
+    
+    const sku = (v.product.sku || v.product.barcode || '').trim();
+    if (sku) {
+      return `Varian #${idx + 1} (SKU: ${sku})`;
+    }
+
+    return `Varian #${idx + 1}`;
+  }
+
+  public selectVariantItem(p: Product, customTitle?: string) {
+    if (!p) return;
+    const formattedName = this.getFormattedProductName(p);
+    let finalName = formattedName;
+
+    if (customTitle && !formattedName.toLowerCase().includes(customTitle.toLowerCase())) {
+      const { baseName } = this.extractParentAndVariant(p);
+      finalName = `${baseName} (${customTitle})`;
+    }
+
+    const snapshot: Product = {
+      ...p,
+      name: finalName
+    };
+
+    this.addToCart(snapshot);
     this.selectedGroupForVariantModal = null;
   }
 
