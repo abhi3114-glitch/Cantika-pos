@@ -156,8 +156,16 @@ export interface GroupedProductTile {
           <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
             <div *ngFor="let item of cart; let idx = index" class="p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs gap-2">
               <div class="flex-1 min-w-0">
-                <div class="font-semibold text-slate-900 dark:text-white line-clamp-1 text-[11px]">{{ item.product.name }}</div>
-                <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                <div class="font-bold text-slate-900 dark:text-white line-clamp-1 text-[11px]">
+                  {{ getFormattedProductName(item.product) }}
+                </div>
+                <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                  <span>SKU: {{ item.product.sku }}</span>
+                  <span *ngIf="getVariantShadeName(item.product)" class="px-1.5 py-0.2 rounded bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 font-bold font-sans text-[9px] border border-rose-200 dark:border-rose-900">
+                    {{ getVariantShadeName(item.product) }}
+                  </span>
+                </div>
+                <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                   Rp {{ item.product.price.toLocaleString('id-ID') }} × {{ item.quantity }} = <strong class="text-rose-700 dark:text-rose-400">Rp {{ (item.product.price * item.quantity).toLocaleString('id-ID') }}</strong>
                 </div>
               </div>
@@ -668,25 +676,67 @@ export class PosCheckoutComponent implements OnInit {
     return this.cart.reduce((sum, item) => sum + Math.max(1, Math.floor(Number(item.quantity) || 1)), 0);
   }
 
+  public getFormattedProductName(p: Product): string {
+    if (!p) return 'Produk';
+    const rawName = (p.name || '').trim();
+    const sku = (p.sku || '').trim();
+
+    const { baseName, variantName } = this.extractParentAndVariant(p);
+
+    if (!rawName || rawName === sku) {
+      if (variantName && variantName !== 'Default') {
+        return `${baseName} (${variantName})`;
+      }
+      return baseName || sku || 'Produk Beauty';
+    }
+
+    if (variantName && variantName !== 'Default' && !rawName.toLowerCase().includes(variantName.toLowerCase())) {
+      return `${rawName} - ${variantName}`;
+    }
+
+    return rawName;
+  }
+
+  public getVariantShadeName(p: Product): string {
+    if (!p) return '';
+    const { variantName } = this.extractParentAndVariant(p);
+    if (variantName && variantName !== 'Default') {
+      return variantName;
+    }
+    if (p.option1Value && p.option1Value.trim()) {
+      return p.option1Value.trim();
+    }
+    return '';
+  }
+
   public addToCart(product: Product) {
     if (!product) return;
 
     // Fresh product instance resolution
     const latestProd = this.allProducts.find(p => p.id === product.id) || product;
-    const existing = this.cart.find(c => c.product.id === latestProd.id);
+    const formattedName = this.getFormattedProductName(latestProd);
+
+    // Create item product snapshot with full descriptive variant name
+    const productSnapshot: Product = {
+      ...latestProd,
+      name: formattedName
+    };
+
+    const existing = this.cart.find(c => c.product.id === productSnapshot.id);
 
     if (existing) {
       const currentQty = Math.max(1, Math.floor(Number(existing.quantity) || 1));
       const nextQty = currentQty + 1;
       existing.quantity = nextQty;
+      existing.product.name = formattedName; // Refresh formatted name
       if (nextQty > latestProd.stock) {
-        this.stockAlertMessage = `⚠️ System Stock Notice: "${latestProd.name}" quantity (${nextQty}) exceeds recorded system stock (${latestProd.stock} ${latestProd.unit}). Item added to sale.`;
+        this.stockAlertMessage = `⚠️ System Stock Notice: "${formattedName}" quantity (${nextQty}) exceeds recorded system stock (${latestProd.stock} ${latestProd.unit}). Item added to sale.`;
         setTimeout(() => this.stockAlertMessage = '', 4000);
       }
     } else {
-      this.cart.push({ product: { ...latestProd }, quantity: 1 });
+      this.cart.push({ product: productSnapshot, quantity: 1 });
       if (latestProd.stock <= 0) {
-        this.stockAlertMessage = `⚠️ System Stock Notice: "${latestProd.name}" has 0 recorded stock in system. Added to Current Sale.`;
+        this.stockAlertMessage = `⚠️ System Stock Notice: "${formattedName}" has 0 recorded stock in system. Added to Current Sale.`;
         setTimeout(() => this.stockAlertMessage = '', 4000);
       }
     }

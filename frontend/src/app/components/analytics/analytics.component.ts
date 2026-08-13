@@ -134,6 +134,7 @@ export class AnalyticsComponent implements OnInit {
     const summaryRow = ['TOTAL TOKO', '"KESELURUHAN KATALOG"', '-', this.totalRetailValuation];
     const profitRow = ['POTENSI LABA', '"KEUNTUNGAN BERSIH"', '-', this.totalPotentialProfit];
 
+    const filename = `Laporan_Omset_Dan_Laba_Cantika_${new Date().toISOString().slice(0, 10)}.csv`;
     const csvContent = '\uFEFF' + [
       headers.join(','), 
       ...rows.map(r => r.join(',')),
@@ -142,11 +143,18 @@ export class AnalyticsComponent implements OnInit {
       profitRow.join(',')
     ].join('\n');
 
+    // Desktop Native IPC File Export Fallback
+    if (typeof window !== 'undefined' && (window as any).cantikaDesktopAPI?.exportFile) {
+      (window as any).cantikaDesktopAPI.exportFile(filename, csvContent, 'text/csv');
+      return;
+    }
+
+    // Browser Blob Download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `Laporan_Omset_Dan_Laba_Cantika_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

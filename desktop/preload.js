@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('cantikaDesktopAPI', {
   platform: process.platform,
   printReceipt: (htmlData) => ipcRenderer.send('print-receipt', htmlData),
   openCashDrawer: () => ipcRenderer.send('open-cash-drawer'),
+  exportFile: (filename, content, type) => ipcRenderer.send('export-file', { filename, content, type }),
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
   maximizeWindow: () => ipcRenderer.send('maximize-window'),
   closeWindow: () => ipcRenderer.send('close-window')

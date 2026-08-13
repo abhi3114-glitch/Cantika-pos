@@ -112,6 +112,8 @@ app.on('window-all-closed', () => {
   }
 });
 
+const fs = require('fs');
+
 // IPC Event Handlers for Hardware Printers & Cash Drawers
 ipcMain.on('print-receipt', (event, htmlData) => {
   if (!mainWindow) return;
@@ -122,6 +124,17 @@ ipcMain.on('print-receipt', (event, htmlData) => {
       printWin.close();
     });
   });
+});
+
+ipcMain.on('export-file', (event, { filename, content, type }) => {
+  try {
+    const downloadsPath = app.getPath('downloads');
+    const filePath = path.join(downloadsPath, filename);
+    fs.writeFileSync(filePath, content, 'utf8');
+    shell.showItemInFolder(filePath);
+  } catch (err) {
+    console.error('Failed to export file in Desktop App:', err);
+  }
 });
 
 ipcMain.on('minimize-window', () => {
