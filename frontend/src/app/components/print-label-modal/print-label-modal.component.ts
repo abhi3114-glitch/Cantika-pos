@@ -2,6 +2,9 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Product } from '../../models/product.model';
+import BEAUTY_SHADES_DATA from '../../data/beauty-shades.json';
+
+const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<string, string>;
 
 @Component({
   selector: 'app-print-label-modal',
@@ -243,7 +246,7 @@ import { Product } from '../../models/product.model';
                   <!-- Item Name Header (Clean Tag Harga with SKU at top) -->
                   <div class="w-full border-b border-black/20 pb-2 mb-2">
                     <span class="text-[10px] font-mono font-extrabold uppercase tracking-wider text-slate-600 block">SKU: {{ item.sku }}</span>
-                    <h3 class="text-xs font-black text-black leading-tight uppercase line-clamp-2 mt-0.5">{{ item.name }}</h3>
+                    <h3 class="text-xs font-black text-black leading-tight uppercase line-clamp-2 mt-0.5">{{ getLabelPrintTitle(item) }}</h3>
                   </div>
 
                   <!-- Price Display Box -->
@@ -280,7 +283,7 @@ import { Product } from '../../models/product.model';
 
                   <!-- Product Name -->
                   <div class="text-[11px] font-extrabold text-black uppercase leading-tight line-clamp-2 my-1">
-                    {{ item.name }}
+                    {{ getLabelPrintTitle(item) }}
                   </div>
 
                   <!-- Selling Price Bottom -->
@@ -438,6 +441,29 @@ export class PrintLabelModalComponent implements OnInit {
       }
     }
     return raw;
+  }
+
+  public getLabelPrintTitle(p: Product): string {
+    if (!p) return '';
+    const rawName = (p.name || '').trim();
+
+    if (this.singleParentOnly) {
+      return this.extractParentName(p);
+    }
+
+    const sku = (p.sku || '').trim();
+    const barcode = (p.barcode || '').trim();
+    const shadeName = BEAUTY_SHADES[sku] || BEAUTY_SHADES[barcode] || p.option1Value || p.option2Value || '';
+
+    if (shadeName && shadeName.trim() && shadeName.trim() !== 'Default') {
+      const cleanShade = shadeName.trim();
+      if (!rawName.toLowerCase().includes(cleanShade.toLowerCase())) {
+        const cleanParent = rawName.replace(/\s+ALL\s+VARIAN\s*$/i, '').replace(/\s+ALL\s+VARIANT\s*$/i, '').trim();
+        return `${cleanParent} - ${cleanShade}`;
+      }
+    }
+
+    return rawName;
   }
 
   get displayProducts(): Product[] {
