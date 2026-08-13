@@ -72,7 +72,7 @@ import { Product } from '../../models/product.model';
                   [(ngModel)]="selectedBrand"
                   class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-hidden font-bold"
                 >
-                  <option value="ALL">📋 Semua Brand / Semua Produk (Print Semua {{ products ? products.length : 0 }} Produk)</option>
+                  <option value="" disabled>-- Pilih Brand Untuk Dicetak --</option>
                   <option *ngFor="let b of brands" [value]="b">✨ Brand: {{ b }}</option>
                 </select>
               </div>
@@ -360,7 +360,7 @@ export class PrintLabelModalComponent implements OnInit {
 
   public templateMode: 'word' | 'iseller' = 'word';
   public searchTerm = '';
-  public selectedBrand = 'ALL';
+  public selectedBrand = '';
   public columns: 3 | 4 = 3;
   
   public showStrikethrough = true;
@@ -412,6 +412,9 @@ export class PrintLabelModalComponent implements OnInit {
       }
     });
     this.brands = Array.from(brandSet).sort();
+    if (this.brands.length > 0 && !this.selectedBrand) {
+      this.selectedBrand = this.brands[0];
+    }
   }
 
   public printCopiesCount = 1;
@@ -438,11 +441,11 @@ export class PrintLabelModalComponent implements OnInit {
   }
 
   get displayProducts(): Product[] {
-    if (!this.products) return [];
+    if (!this.products || !this.selectedBrand) return [];
     
     let filtered = this.products.filter(p => {
       const productBrand = this.extractBrandName(p);
-      const matchBrand = this.selectedBrand === 'ALL' || productBrand === this.selectedBrand;
+      const matchBrand = productBrand === this.selectedBrand;
       const matchSearch = !this.searchTerm || 
         (p.name && p.name.toLowerCase().includes(this.searchTerm.toLowerCase())) || 
         (p.barcode && p.barcode.includes(this.searchTerm)) || 
@@ -470,12 +473,11 @@ export class PrintLabelModalComponent implements OnInit {
     const copies = Math.max(1, Math.min(500, this.printCopiesCount || 1));
     const result: Product[] = [];
 
-    // Allow printing all items when selectedBrand === 'ALL'
-    const limit = this.selectedBrand === 'ALL' ? 500 : 200;
-    const baseItems = filtered.slice(0, limit);
+    // Max 60 items for fast 0-lag rendering
+    const baseItems = filtered.slice(0, 60);
     baseItems.forEach(item => {
       for (let i = 0; i < copies; i++) {
-        if (result.length < 1000) {
+        if (result.length < 300) {
           result.push(item);
         }
       }
