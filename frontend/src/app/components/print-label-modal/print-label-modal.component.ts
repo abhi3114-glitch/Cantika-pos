@@ -246,7 +246,7 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
                   <!-- Item Name Header (Clean Tag Harga with SKU at top) -->
                   <div class="w-full border-b border-black/20 pb-2 mb-2">
                     <span class="text-[10px] font-mono font-extrabold uppercase tracking-wider text-slate-600 block">SKU: {{ item.sku }}</span>
-                    <h3 class="text-xs font-black text-black leading-tight uppercase line-clamp-2 mt-0.5">{{ getLabelPrintTitle(item) }}</h3>
+                    <h3 [class]="getTitleFontSizeClass(item)">{{ getLabelPrintTitle(item) }}</h3>
                   </div>
 
                   <!-- Price Display Box -->
@@ -282,7 +282,7 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
                   </div>
 
                   <!-- Product Name -->
-                  <div class="text-[11px] font-extrabold text-black uppercase leading-tight line-clamp-2 my-1">
+                  <div [class]="getTitleFontSizeClass(item)">
                     {{ getLabelPrintTitle(item) }}
                   </div>
 
@@ -528,6 +528,16 @@ export class PrintLabelModalComponent implements OnInit {
 
   public formatNumber(num: number): string {
     return new Intl.NumberFormat('id-ID').format(num || 0);
+  }
+
+  public getTitleFontSizeClass(item: Product): string {
+    const title = this.getLabelPrintTitle(item);
+    if (title.length > 55) {
+      return 'text-[9px] leading-[1.15] font-black uppercase text-black my-1 break-words tracking-tight';
+    } else if (title.length > 38) {
+      return 'text-[10px] leading-tight font-black uppercase text-black my-1 break-words tracking-tight';
+    }
+    return 'text-[11px] leading-tight font-black uppercase text-black my-1 break-words tracking-tight';
   }
 
   public printPage() {
