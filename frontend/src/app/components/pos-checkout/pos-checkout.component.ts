@@ -9,6 +9,9 @@ import { LanguageService } from '../../services/language.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { Product, CartItem, SaleTransaction } from '../../models/product.model';
 import { IconComponent } from '../icon/icon.component';
+import BEAUTY_SHADES_DATA from '../../data/beauty-shades.json';
+
+const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<string, string>;
 
 export interface GroupedProductTile {
   isGroup: boolean;
@@ -627,17 +630,30 @@ export class PosCheckoutComponent implements OnInit {
 
   public getVariantDisplayTitle(v: { product: Product; variantName: string }, idx: number): string {
     if (!v || !v.product) return `Varian #${idx + 1}`;
-    
+    const p = v.product;
+
+    // 1. Direct Beauty Shade Dictionary lookup by SKU or Barcode
+    const sku = (p.sku || '').trim();
+    const barcode = (p.barcode || '').trim();
+    if (sku && BEAUTY_SHADES[sku]) return BEAUTY_SHADES[sku];
+    if (barcode && BEAUTY_SHADES[barcode]) return BEAUTY_SHADES[barcode];
+
+    // 2. Direct option1Value / option2Value check
+    if (p.option1Value && p.option1Value.trim() && p.option1Value.trim() !== 'Default') {
+      return p.option1Value.trim();
+    }
+    if (p.option2Value && p.option2Value.trim()) {
+      return p.option2Value.trim();
+    }
+
+    // 3. Direct variantName property if set
     if (v.variantName && v.variantName !== 'Default' && v.variantName.trim()) {
       return v.variantName.trim();
     }
-    if (v.product.option1Value && v.product.option1Value.trim()) {
-      return v.product.option1Value.trim();
-    }
-    
-    const sku = (v.product.sku || v.product.barcode || '').trim();
-    if (sku) {
-      return `Varian #${idx + 1} (SKU: ${sku})`;
+
+    // 4. Fallback to SKU identifier
+    if (sku || barcode) {
+      return `Shade / Varian ${idx + 1} (SKU: ${sku || barcode})`;
     }
 
     return `Varian #${idx + 1}`;
@@ -645,12 +661,18 @@ export class PosCheckoutComponent implements OnInit {
 
   public selectVariantItem(p: Product, customTitle?: string) {
     if (!p) return;
+    const sku = (p.sku || '').trim();
+    const barcode = (p.barcode || '').trim();
+    const resolvedShade = customTitle || BEAUTY_SHADES[sku] || BEAUTY_SHADES[barcode] || p.option1Value || '';
+    
     const formattedName = this.getFormattedProductName(p);
     let finalName = formattedName;
 
-    if (customTitle && !formattedName.toLowerCase().includes(customTitle.toLowerCase())) {
-      const { baseName } = this.extractParentAndVariant(p);
-      finalName = `${baseName} (${customTitle})`;
+    if (resolvedShade && resolvedShade !== 'Default' && !resolvedShade.startsWith('Varian #')) {
+      if (!formattedName.toLowerCase().includes(resolvedShade.toLowerCase())) {
+        const { baseName } = this.extractParentAndVariant(p);
+        finalName = `${baseName} (${resolvedShade})`;
+      }
     }
 
     const snapshot: Product = {
