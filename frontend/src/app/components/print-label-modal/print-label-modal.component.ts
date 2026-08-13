@@ -225,8 +225,8 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
 
             <!-- Quick Counter Summary -->
             <div class="pt-3 border-t border-slate-800 text-xs text-slate-400 space-y-1">
-              <div>Siap Cetak: <strong class="text-white">{{ displayProducts.length }} Produk</strong></div>
-              <div class="text-[10px] text-slate-500">Gunakan Ctrl+P atau tombol Cetak untuk mencetak langsung ke printer thermal / kertas label.</div>
+              <div>Siap Cetak: <strong class="text-emerald-400 font-bold">{{ filteredBrandProducts.length }} Produk (Brand: {{ selectedBrand }})</strong></div>
+              <div class="text-[10px] text-slate-400 font-medium">Menampilkan seluruh {{ displayProducts.length }} lembar label tag harga untuk brand ini.</div>
             </div>
 
           </div>
@@ -466,7 +466,7 @@ export class PrintLabelModalComponent implements OnInit {
     return rawName;
   }
 
-  get displayProducts(): Product[] {
+  get filteredBrandProducts(): Product[] {
     if (!this.products || !this.selectedBrand) return [];
     
     let filtered = this.products.filter(p => {
@@ -496,14 +496,18 @@ export class PrintLabelModalComponent implements OnInit {
       filtered = parentList;
     }
 
+    return filtered;
+  }
+
+  get displayProducts(): Product[] {
+    const filtered = this.filteredBrandProducts;
     const copies = Math.max(1, Math.min(500, this.printCopiesCount || 1));
     const result: Product[] = [];
 
-    // Max 60 items for fast 0-lag rendering
-    const baseItems = filtered.slice(0, 60);
-    baseItems.forEach(item => {
+    // Show ALL products for the selected brand
+    filtered.forEach(item => {
       for (let i = 0; i < copies; i++) {
-        if (result.length < 300) {
+        if (result.length < 2000) {
           result.push(item);
         }
       }
