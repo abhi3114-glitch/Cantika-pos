@@ -17,3 +17,5 @@ Thumbs.db
 desktop/node_modules/
 desktop/dist-desktop/
 Cantika-POS-1Click-Setup.zip
+Cantika-POS-1Click-Standalone/
+*.exe

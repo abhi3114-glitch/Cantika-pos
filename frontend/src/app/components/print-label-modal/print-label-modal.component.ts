@@ -69,11 +69,11 @@ import { Product } from '../../models/product.model';
 
               <div class="flex items-center gap-1.5">
                 <select
-                  [(ngModel)]="selectedVendor"
-                  class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-hidden font-medium"
+                  [(ngModel)]="selectedBrand"
+                  class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-hidden font-bold"
                 >
-                  <option value="ALL">Semua Brand / Vendor ({{ vendors.length }})</option>
-                  <option *ngFor="let v of vendors" [value]="v">{{ v }}</option>
+                  <option value="ALL">📋 Semua Brand / Semua Produk (Print Semua {{ products ? products.length : 0 }} Produk)</option>
+                  <option *ngFor="let b of brands" [value]="b">✨ Brand: {{ b }}</option>
                 </select>
               </div>
             </div>
@@ -360,7 +360,7 @@ export class PrintLabelModalComponent implements OnInit {
 
   public templateMode: 'word' | 'iseller' = 'word';
   public searchTerm = '';
-  public selectedVendor = 'ALL';
+  public selectedBrand = 'ALL';
   public columns: 3 | 4 = 3;
   
   public showStrikethrough = true;
@@ -371,23 +371,47 @@ export class PrintLabelModalComponent implements OnInit {
   public showPrice = true;
   public showSKU = true;
 
-  public vendors: string[] = [];
+  public brands: string[] = [];
 
   ngOnInit() {
-    this.extractVendors();
+    this.extractBrands();
   }
 
   ngOnChanges() {
-    this.extractVendors();
+    this.extractBrands();
   }
 
-  private extractVendors() {
+  public extractBrandName(p: Product): string {
+    if (!p || !p.name) return 'LAINNYA';
+    const rawName = p.name.trim();
+
+    if (/^AKSESORI?ES?/i.test(rawName)) return 'AKSESORIS';
+
+    const parts = rawName.split(/\s+-\s+/);
+    if (parts.length >= 2 && parts[0].trim().length > 1) {
+      const b = parts[0].trim().replace(/^CV\.\s*/i, '').replace(/^PT\.\s*/i, '').toUpperCase();
+      if (!/^PT\b/i.test(b) && !/^CV\b/i.test(b)) return b;
+    }
+
+    if (p.type && p.type.trim() && !/^PT\b/i.test(p.type.trim())) {
+      return p.type.trim().toUpperCase();
+    }
+
+    const clean = rawName.replace(/^CV\.\s*/i, '').replace(/^PT\.\s*/i, '');
+    const firstWord = clean.split(/[\s\-_\/:]+/)[0];
+    return firstWord ? firstWord.toUpperCase() : 'BEAUTY';
+  }
+
+  private extractBrands() {
     if (!this.products) return;
-    const vendorSet = new Set<string>();
+    const brandSet = new Set<string>();
     this.products.forEach(p => {
-      if (p.vendor && p.vendor.trim()) vendorSet.add(p.vendor.trim());
+      const b = this.extractBrandName(p);
+      if (b && b !== 'LAINNYA' && b !== 'BEAUTY') {
+        brandSet.add(b);
+      }
     });
-    this.vendors = Array.from(vendorSet).sort();
+    this.brands = Array.from(brandSet).sort();
   }
 
   public printCopiesCount = 1;
@@ -417,12 +441,13 @@ export class PrintLabelModalComponent implements OnInit {
     if (!this.products) return [];
     
     let filtered = this.products.filter(p => {
-      const matchVendor = this.selectedVendor === 'ALL' || p.vendor === this.selectedVendor;
+      const productBrand = this.extractBrandName(p);
+      const matchBrand = this.selectedBrand === 'ALL' || productBrand === this.selectedBrand;
       const matchSearch = !this.searchTerm || 
-        p.name.toLowerCase().includes(this.searchTerm.toLowerCase()) || 
-        p.barcode.includes(this.searchTerm) || 
-        p.sku.toLowerCase().includes(this.searchTerm.toLowerCase());
-      return matchVendor && matchSearch;
+        (p.name && p.name.toLowerCase().includes(this.searchTerm.toLowerCase())) || 
+        (p.barcode && p.barcode.includes(this.searchTerm)) || 
+        (p.sku && p.sku.toLowerCase().includes(this.searchTerm.toLowerCase()));
+      return matchBrand && matchSearch;
     });
 
     if (this.singleParentOnly) {
@@ -445,10 +470,12 @@ export class PrintLabelModalComponent implements OnInit {
     const copies = Math.max(1, Math.min(500, this.printCopiesCount || 1));
     const result: Product[] = [];
 
-    const baseItems = filtered.slice(0, 80);
+    // Allow printing all items when selectedBrand === 'ALL'
+    const limit = this.selectedBrand === 'ALL' ? 500 : 200;
+    const baseItems = filtered.slice(0, limit);
     baseItems.forEach(item => {
       for (let i = 0; i < copies; i++) {
-        if (result.length < 500) {
+        if (result.length < 1000) {
           result.push(item);
         }
       }
