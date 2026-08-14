@@ -307,6 +307,10 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
   `,
   styles: [`
     @media print {
+      @page {
+        margin: 8mm;
+        size: A4 portrait;
+      }
       body * {
         visibility: hidden;
       }
@@ -314,13 +318,14 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
         display: none !important;
       }
       .print-modal-container {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
+        position: static !important;
+        inset: auto !important;
         width: 100% !important;
         height: auto !important;
         background: white !important;
         padding: 0 !important;
+        overflow: visible !important;
+        display: block !important;
       }
       .print-modal-content {
         border: none !important;
@@ -328,30 +333,41 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
         background: white !important;
         max-height: none !important;
         width: 100% !important;
+        overflow: visible !important;
+        display: block !important;
       }
       .print-sheet-container {
         background: white !important;
         padding: 0 !important;
+        overflow: visible !important;
+        display: block !important;
       }
       .printable-area, .printable-area * {
         visibility: visible !important;
       }
       .printable-area {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
+        position: static !important;
         width: 100% !important;
         box-shadow: none !important;
         border: none !important;
-        padding: 10px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+      .word-tag-card, .iseller-label-card {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        break-inside: avoid-page !important;
+        -webkit-column-break-inside: avoid !important;
+        display: inline-flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
       }
       .word-tag-card {
         border: 2px solid black !important;
-        page-break-inside: avoid !important;
       }
       .iseller-label-card {
         border: 1px solid #000 !important;
-        page-break-inside: avoid !important;
       }
     }
   `]
