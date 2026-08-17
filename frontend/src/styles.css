@@ -98,3 +98,60 @@ html.dark ::-webkit-scrollbar-thumb {
 .animate-fade-in {
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Isolated Print Mount System for Cantika POS Labels & Receipts */
+@media print {
+  @page {
+    margin: 8mm;
+    size: A4 portrait;
+  }
+
+  /* 1. Hide the entire Angular application tree */
+  app-root, body > app-root, .no-print {
+    display: none !important;
+  }
+
+  /* 2. Show ONLY the isolated print mount attached to document.body */
+  #cantika-print-mount {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 99999999 !important;
+  }
+
+  #cantika-print-mount .printable-area {
+    display: grid !important;
+    position: relative !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+
+  #cantika-print-mount .word-tag-card, 
+  #cantika-print-mount .iseller-label-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    break-inside: avoid-page !important;
+    -webkit-column-break-inside: avoid !important;
+    display: inline-flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
+  }
+
+  #cantika-print-mount .word-tag-card {
+    border: 2px solid #000000 !important;
+  }
+
+  #cantika-print-mount .iseller-label-card {
+    border: 1px solid #000000 !important;
+  }
+}

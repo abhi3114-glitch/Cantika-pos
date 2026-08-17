@@ -583,6 +583,32 @@ export class PrintLabelModalComponent implements OnInit {
   }
 
   public printPage() {
+    const area = document.querySelector('.printable-area');
+    if (!area) {
+      window.print();
+      return;
+    }
+
+    // Clean up any existing print mount node
+    const oldMount = document.getElementById('cantika-print-mount');
+    if (oldMount && oldMount.parentNode) {
+      oldMount.parentNode.removeChild(oldMount);
+    }
+
+    // Mount printable sheet directly to document.body
+    const mount = document.createElement('div');
+    mount.id = 'cantika-print-mount';
+    mount.appendChild(area.cloneNode(true));
+    document.body.appendChild(mount);
+
+    // Trigger browser print
     window.print();
+
+    // Clean up mount node after print dialog closes
+    setTimeout(() => {
+      if (document.body.contains(mount)) {
+        document.body.removeChild(mount);
+      }
+    }, 600);
   }
 }
