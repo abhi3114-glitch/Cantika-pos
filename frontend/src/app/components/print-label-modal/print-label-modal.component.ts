@@ -242,66 +242,74 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
           <!-- Printable Display Sheet Preview Area -->
           <div class="flex-1 bg-slate-200 p-6 overflow-y-auto print-sheet-container">
             
-            <!-- WORD TEMPLATE MODE SHEET (Matches Screenshot 1) -->
+            <!-- WORD TEMPLATE MODE SHEET (Row-based Chunking for 100% Unbroken Page Breaks) -->
             <ng-container *ngIf="templateMode === 'word'">
-              <div 
-                [class]="columns === 3 ? 'grid grid-cols-3 gap-3 bg-white p-6 rounded-2xl shadow-xl border border-slate-300 printable-area' : 'grid grid-cols-4 gap-2.5 bg-white p-6 rounded-2xl shadow-xl border border-slate-300 printable-area'"
-              >
+              <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-300 printable-area space-y-3">
                 <div 
-                  *ngFor="let item of displayProducts"
-                  class="border-2 border-black p-3.5 flex flex-col justify-between items-center text-center rounded-xs bg-white min-h-[140px] word-tag-card relative"
+                  *ngFor="let row of productRows"
+                  [class]="columns === 3 ? 'grid grid-cols-3 gap-3 print-row' : 'grid grid-cols-4 gap-2.5 print-row'"
                   style="page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important;"
                 >
-                  <!-- Item Name Header (Clean Tag Harga with SKU at top) -->
-                  <div class="w-full border-b border-black/20 pb-2 mb-2">
-                    <span class="text-[10px] font-mono font-extrabold uppercase tracking-wider text-slate-600 block">SKU: {{ item.sku }}</span>
-                    <h3 [class]="getTitleFontSizeClass(item)">{{ getLabelPrintTitle(item) }}</h3>
-                  </div>
-
-                  <!-- Price Display Box -->
-                  <div class="space-y-1 my-auto w-full">
-                    <!-- Strikethrough Old Price (Red Line through Old Price) -->
-                    <div *ngIf="showStrikethrough" class="text-xs font-bold text-gray-400 relative inline-block px-1">
-                      <span>RP {{ formatNumber(getOldPrice(item.price)) }}</span>
-                      <span class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-red-600 w-full pointer-events-none"></span>
+                  <div 
+                    *ngFor="let item of row"
+                    class="border-2 border-black p-3.5 flex flex-col justify-between items-center text-center rounded-xs bg-white min-h-[140px] word-tag-card relative"
+                    style="page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important;"
+                  >
+                    <!-- Item Name Header (Clean Tag Harga with SKU at top) -->
+                    <div class="w-full border-b border-black/20 pb-2 mb-2">
+                      <span class="text-[10px] font-mono font-extrabold uppercase tracking-wider text-slate-600 block">SKU: {{ item.sku }}</span>
+                      <h3 [class]="getTitleFontSizeClass(item)">{{ getLabelPrintTitle(item) }}</h3>
                     </div>
 
-                    <!-- Large New Promo Price -->
-                    <div class="text-lg font-black text-black font-heading tracking-tight leading-none">
-                      RP {{ formatNumber(item.price) }}
+                    <!-- Price Display Box -->
+                    <div class="space-y-1 my-auto w-full">
+                      <!-- Strikethrough Old Price (Red Line through Old Price) -->
+                      <div *ngIf="showStrikethrough" class="text-xs font-bold text-gray-400 relative inline-block px-1">
+                        <span>RP {{ formatNumber(getOldPrice(item.price)) }}</span>
+                        <span class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-red-600 w-full pointer-events-none"></span>
+                      </div>
+
+                      <!-- Large New Promo Price -->
+                      <div class="text-lg font-black text-black font-heading tracking-tight leading-none">
+                        RP {{ formatNumber(item.price) }}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </ng-container>
 
-            <!-- iSELLER TEMPLATE MODE SHEET (Matches Screenshot 2) -->
+            <!-- iSELLER TEMPLATE MODE SHEET (Row-based Chunking for 100% Unbroken Page Breaks) -->
             <ng-container *ngIf="templateMode === 'iseller'">
-              <div 
-                [class]="columns === 3 ? 'grid grid-cols-3 gap-3 bg-white p-6 rounded-2xl shadow-xl border border-slate-300 printable-area' : 'grid grid-cols-4 gap-2 bg-white p-6 rounded-2xl shadow-xl border border-slate-300 printable-area'"
-              >
+              <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-300 printable-area space-y-2">
                 <div 
-                  *ngFor="let item of displayProducts"
-                  [class]="getLabelCardClasses()"
+                  *ngFor="let row of productRows"
+                  [class]="columns === 3 ? 'grid grid-cols-3 gap-3 print-row' : 'grid grid-cols-4 gap-2 print-row'"
                   style="page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important;"
                 >
-                  <!-- Barcode Number Top -->
-                  <div *ngIf="showBarcodeNumber" class="text-[10px] font-mono font-bold text-black tracking-wider text-left">
-                    {{ item.barcode || item.sku }}
-                  </div>
+                  <div 
+                    *ngFor="let item of row"
+                    [class]="getLabelCardClasses()"
+                    style="page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important;"
+                  >
+                    <!-- Barcode Number Top -->
+                    <div *ngIf="showBarcodeNumber" class="text-[10px] font-mono font-bold text-black tracking-wider text-left">
+                      {{ item.barcode || item.sku }}
+                    </div>
 
-                  <!-- Product Name -->
-                  <div [class]="getTitleFontSizeClass(item)">
-                    {{ getLabelPrintTitle(item) }}
-                  </div>
+                    <!-- Product Name -->
+                    <div [class]="getTitleFontSizeClass(item)">
+                      {{ getLabelPrintTitle(item) }}
+                    </div>
 
-                  <!-- Selling Price Bottom -->
-                  <div *ngIf="showPrice" class="text-xs font-black text-black font-heading mt-1">
-                    Rp {{ formatNumber(item.price) }}
-                  </div>
+                    <!-- Selling Price Bottom -->
+                    <div *ngIf="showPrice" class="text-xs font-black text-black font-heading mt-1">
+                      Rp {{ formatNumber(item.price) }}
+                    </div>
 
-                  <div *ngIf="showSKU" class="text-[9px] font-mono text-gray-500 mt-0.5">
-                    SKU: {{ item.sku }}
+                    <div *ngIf="showSKU" class="text-[9px] font-mono text-gray-500 mt-0.5">
+                      SKU: {{ item.sku }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -561,6 +569,16 @@ export class PrintLabelModalComponent implements OnInit {
     });
 
     return result;
+  }
+
+  get productRows(): Product[][] {
+    const items = this.displayProducts;
+    const cols = this.columns || 3;
+    const rows: Product[][] = [];
+    for (let i = 0; i < items.length; i += cols) {
+      rows.push(items.slice(i, i + cols));
+    }
+    return rows;
   }
 
   public getLabelCardClasses(): string {
