@@ -55,72 +55,86 @@ import { FooterComponent } from './components/footer/footer.component';
 
       <!-- Internal Security Gatekeeper Login Overlay (When Logged Out) -->
       <ng-container *ngIf="!(authService.currentUser$ | async); else internalSystem">
-        <div class="min-h-screen bg-gradient-to-br from-slate-950 via-rose-950 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+        <div class="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative">
           
-          <!-- Ambient Background Glows -->
-          <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-rose-600/20 rounded-full blur-3xl animate-pulse-glow"></div>
-          <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse-glow" style="animation-delay: 1.5s;"></div>
-
           <!-- Top Language Switcher Toggle (Gatekeeper) -->
           <div class="absolute top-6 right-6 z-20">
             <button
               (click)="langService.toggleLanguage()"
-              class="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs backdrop-blur-md border border-white/20 flex items-center gap-2 shadow-xl transition-all cursor-pointer"
+              class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs border border-slate-800 flex items-center gap-2 shadow-xs transition-all cursor-pointer"
             >
-              <span>{{ (langService.currentLang$ | async) === 'id' ? '🇮🇩 Bahasa Indonesia' : '🇬🇧 English Language' }}</span>
-              <span class="text-amber-300 font-mono">⚙️ Switch</span>
+              <span>{{ (langService.currentLang$ | async) === 'id' ? '🇮🇩 ID' : '🇬🇧 EN' }}</span>
+              <span class="text-rose-400 font-mono text-[10px] uppercase font-bold">Switch</span>
             </button>
           </div>
 
-          <div class="bg-white/95 backdrop-blur-xl rounded-3xl max-w-md w-full p-8 shadow-2xl border border-rose-200/50 space-y-6 animate-fade-in text-center relative z-10">
+          <div class="bg-slate-900 rounded-2xl max-w-md w-full p-8 shadow-xl border border-slate-800 space-y-6 animate-fade-in text-center relative z-10">
             
-            <div class="w-16 h-16 rounded-3xl bg-gradient-to-br from-rose-500 via-pink-600 to-rose-700 text-white flex items-center justify-center text-3xl shadow-xl shadow-rose-600/30 mx-auto font-heading ring-4 ring-rose-100">
-              🌺
+            <div class="w-14 h-14 rounded-2xl bg-rose-700 text-white flex items-center justify-center text-2xl shadow-md mx-auto font-heading ring-2 ring-rose-500/30">
+              💄
             </div>
 
-            <div class="space-y-1.5">
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black uppercase tracking-wider">
+            <div class="space-y-1">
+              <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-950/80 text-rose-300 text-[10px] font-bold uppercase tracking-wider border border-rose-900/50">
                 🔒 {{ 'internalPortal' | translate }}
               </span>
-              <h2 class="text-2xl font-black text-slate-900 font-heading tracking-tight">CANTIKA BEAUTY STORE</h2>
-              <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+              <h2 class="text-xl font-extrabold text-white font-heading tracking-tight">CANTIKA BEAUTY STORE</h2>
+              <p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
                 {{ 'loginPrompt' | translate }}
               </p>
             </div>
 
             <!-- Error Banner -->
-            <div *ngIf="loginErrorMessage" class="p-3.5 bg-rose-50 text-rose-800 border border-rose-200 text-xs rounded-2xl font-bold text-left shadow-xs">
+            <div *ngIf="loginErrorMessage" class="p-3 bg-rose-950/60 text-rose-300 border border-rose-900 text-xs rounded-xl font-bold text-left shadow-xs">
               {{ loginErrorMessage }}
             </div>
 
             <form (ngSubmit)="handlePhoneLoginSubmit()" class="space-y-4 text-left text-xs">
               <div>
-                <label class="font-extrabold text-slate-700 block mb-1 tracking-wide">{{ 'phoneLabel' | translate }}</label>
+                <label class="font-bold text-slate-300 block mb-1 tracking-wide">{{ 'phoneLabel' | translate }}</label>
                 <input
                   type="tel"
                   required
                   [(ngModel)]="phoneInput"
                   name="phoneInput"
                   placeholder="081234567890"
-                  class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl font-mono font-extrabold text-rose-900 text-sm focus:outline-hidden focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+                  class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl font-mono font-bold text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label class="font-extrabold text-slate-700 block mb-1 tracking-wide">{{ 'passwordLabel' | translate }}</label>
+                <label class="font-bold text-slate-300 block mb-1 tracking-wide">{{ 'passwordLabel' | translate }}</label>
                 <input
                   type="password"
                   required
                   [(ngModel)]="passwordInput"
                   name="passwordInput"
                   placeholder="••••••••"
-                  class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl font-mono font-extrabold text-slate-900 text-sm focus:outline-hidden focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+                  class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl font-mono font-bold text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500 transition-colors"
                 />
               </div>
 
-              <button type="submit" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-extrabold text-xs shadow-lg shadow-rose-600/30 hover:shadow-rose-600/50 transition-all duration-300 font-heading uppercase tracking-wider cursor-pointer">
+              <button type="submit" class="w-full py-3 px-6 rounded-xl bg-rose-700 hover:bg-rose-800 active:bg-rose-900 text-white font-bold text-xs shadow-md transition-all font-heading uppercase tracking-wider cursor-pointer">
                 {{ 'loginBtn' | translate }}
               </button>
+
+              <!-- Quick Demo Accounts -->
+              <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  (click)="loginWithDemo('owner')"
+                  class="flex-1 py-2 px-3 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 text-[11px] font-semibold border border-slate-800 transition-colors"
+                >
+                  👑 Demo Owner
+                </button>
+                <button
+                  type="button"
+                  (click)="loginWithDemo('employee')"
+                  class="flex-1 py-2 px-3 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 text-[11px] font-semibold border border-slate-800 transition-colors"
+                >
+                  👩‍💼 Demo Kasir
+                </button>
+              </div>
             </form>
 
           </div>
