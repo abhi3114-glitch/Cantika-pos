@@ -250,6 +250,7 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
                 <div 
                   *ngFor="let item of displayProducts"
                   class="border-2 border-black p-3.5 flex flex-col justify-between items-center text-center rounded-xs bg-white min-h-[140px] word-tag-card relative"
+                  style="page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important;"
                 >
                   <!-- Item Name Header (Clean Tag Harga with SKU at top) -->
                   <div class="w-full border-b border-black/20 pb-2 mb-2">
@@ -282,6 +283,7 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
                 <div 
                   *ngFor="let item of displayProducts"
                   [class]="getLabelCardClasses()"
+                  style="page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important;"
                 >
                   <!-- Barcode Number Top -->
                   <div *ngIf="showBarcodeNumber" class="text-[10px] font-mono font-bold text-black tracking-wider text-left">
@@ -619,10 +621,14 @@ export class PrintLabelModalComponent implements OnInit {
           scale: 2, 
           useCORS: true, 
           backgroundColor: '#ffffff',
-          logging: false
+          logging: false,
+          scrollY: 0
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { 
+          mode: ['css', 'legacy'], 
+          avoid: ['.word-tag-card', '.iseller-label-card'] 
+        }
       };
 
       await (window as any).html2pdf().set(opt).from(area).save();
