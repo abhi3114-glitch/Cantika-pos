@@ -61,9 +61,13 @@ function createMainWindow() {
         },
         { type: 'separator' },
         {
-          label: 'Muat Ulang Halaman (Reload)',
+          label: 'Muat Ulang Halaman (Reload Hard)',
           accelerator: 'CmdOrCtrl+R',
-          click: () => mainWindow.reload()
+          click: () => {
+            if (mainWindow) {
+              mainWindow.webContents.reloadIgnoringCache();
+            }
+          }
         },
         { role: 'quit', label: 'Keluar dari Aplikasi' }
       ]
