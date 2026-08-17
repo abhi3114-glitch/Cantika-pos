@@ -311,22 +311,39 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
         margin: 8mm;
         size: A4 portrait;
       }
-      body * {
-        visibility: hidden;
-      }
-      .no-print {
+      
+      /* Hide entire app UI, header, main content, and footer */
+      body > app-root > div > header,
+      body > app-root > div > main,
+      body > app-root > div > footer,
+      .no-print,
+      header,
+      footer {
         display: none !important;
       }
+
+      /* Make body clean white canvas */
+      body {
+        background: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
       .print-modal-container {
-        position: static !important;
-        inset: auto !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
         width: 100% !important;
         height: auto !important;
         background: white !important;
         padding: 0 !important;
+        margin: 0 !important;
         overflow: visible !important;
         display: block !important;
+        z-index: 999999 !important;
       }
+
       .print-modal-content {
         border: none !important;
         box-shadow: none !important;
@@ -335,25 +352,28 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
         width: 100% !important;
         overflow: visible !important;
         display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
+
       .print-sheet-container {
         background: white !important;
         padding: 0 !important;
         overflow: visible !important;
         display: block !important;
       }
-      .printable-area, .printable-area * {
-        visibility: visible !important;
-      }
+
       .printable-area {
-        position: static !important;
+        position: relative !important;
         width: 100% !important;
         box-shadow: none !important;
         border: none !important;
         padding: 0 !important;
         margin: 0 !important;
         overflow: visible !important;
+        background: white !important;
       }
+
       .word-tag-card, .iseller-label-card {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
@@ -363,9 +383,11 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
         flex-direction: column !important;
         box-sizing: border-box !important;
       }
+
       .word-tag-card {
         border: 2px solid black !important;
       }
+
       .iseller-label-card {
         border: 1px solid #000 !important;
       }
