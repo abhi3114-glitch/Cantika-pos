@@ -26,6 +26,14 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
           
           <div class="flex items-center gap-2">
             <button
+              (click)="saveAsPDF()"
+              [disabled]="isGeneratingPDF"
+              class="px-4 py-2 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-rose-900/30 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+              title="Download File PDF Langsung ke Laptop / Komputer"
+            >
+              <span>{{ isGeneratingPDF ? '⏳ Memproses PDF...' : '📄 Save Direct PDF' }}</span>
+            </button>
+            <button
               (click)="printPage()"
               class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-900/30 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
             >
@@ -580,6 +588,51 @@ export class PrintLabelModalComponent implements OnInit {
       return 'text-[10px] leading-tight font-black uppercase text-black my-1 break-words tracking-tight';
     }
     return 'text-[11px] leading-tight font-black uppercase text-black my-1 break-words tracking-tight';
+  }
+
+  public isGeneratingPDF = false;
+
+  public async saveAsPDF() {
+    const area = document.querySelector('.printable-area') as HTMLElement;
+    if (!area) return;
+
+    this.isGeneratingPDF = true;
+
+    try {
+      if (!(window as any).html2pdf) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load html2pdf script'));
+          document.head.appendChild(script);
+        });
+      }
+
+      const brandName = (this.selectedBrand || 'Produk').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `Label_Tag_Harga_Cantika_${brandName}.pdf`;
+
+      const opt = {
+        margin: [6, 6, 6, 6],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          backgroundColor: '#ffffff',
+          logging: false
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      await (window as any).html2pdf().set(opt).from(area).save();
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      this.printPage();
+    } finally {
+      this.isGeneratingPDF = false;
+    }
   }
 
   public printPage() {
