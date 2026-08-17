@@ -260,10 +260,9 @@ const BEAUTY_SHADES: Record<string, string> = BEAUTY_SHADES_DATA as Record<strin
                   <!-- Price Display Box -->
                   <div class="space-y-1 my-auto w-full">
                     <!-- Strikethrough Old Price (Red Line through Old Price) -->
-                    <div *ngIf="showStrikethrough" class="text-xs font-bold text-gray-500 relative inline-block">
-                      <span class="line-through decoration-red-600 decoration-2 text-gray-400">
-                        RP {{ formatNumber(getOldPrice(item.price)) }}
-                      </span>
+                    <div *ngIf="showStrikethrough" class="text-xs font-bold text-gray-400 relative inline-block px-1">
+                      <span>RP {{ formatNumber(getOldPrice(item.price)) }}</span>
+                      <span class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-red-600 w-full pointer-events-none"></span>
                     </div>
 
                     <!-- Large New Promo Price -->
@@ -741,6 +740,16 @@ export class PrintLabelModalComponent implements OnInit {
             .my-auto { margin-top: auto !important; margin-bottom: auto !important; }
             .space-y-1 > * + * { margin-top: 4px !important; }
             .break-words { overflow-wrap: break-word !important; word-break: break-word !important; }
+            .relative { position: relative !important; }
+            .absolute { position: absolute !important; }
+            .inline-block { display: inline-block !important; }
+            .left-0 { left: 0 !important; }
+            .right-0 { right: 0 !important; }
+            .top-1\/2 { top: 50% !important; }
+            .-translate-y-1\/2 { transform: translateY(-50%) !important; }
+            .h-\\[2px\\] { height: 2px !important; }
+            .bg-red-600 { background-color: #dc2626 !important; }
+            .pointer-events-none { pointer-events: none !important; }
           </style>
         </head>
         <body>
