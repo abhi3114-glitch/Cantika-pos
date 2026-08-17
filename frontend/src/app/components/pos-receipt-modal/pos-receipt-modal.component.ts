@@ -123,7 +123,86 @@ export class PosReceiptModalComponent {
   constructor(public langService: LanguageService) {}
 
   public printThermalReceipt() {
-    window.print();
+    const area = document.getElementById('printable-receipt');
+    if (!area) return;
+
+    const oldFrame = document.getElementById('cantika-receipt-print-frame') as HTMLIFrameElement;
+    if (oldFrame && oldFrame.parentNode) {
+      oldFrame.parentNode.removeChild(oldFrame);
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'cantika-receipt-print-frame';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Struk Pembayaran - Cantika Beauty Store</title>
+          <meta charset="utf-8">
+          <style>
+            @page {
+              margin: 2mm;
+              size: 80mm auto;
+            }
+            body {
+              background-color: #ffffff !important;
+              color: #000000 !important;
+              margin: 0 !important;
+              padding: 4px !important;
+              font-family: monospace !important;
+              font-size: 11px !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            #printable-receipt {
+              width: 100% !important;
+              background: #ffffff !important;
+            }
+            .text-center { text-align: center !important; }
+            .font-bold, .font-black { font-weight: 700 !important; }
+            .text-xs { font-size: 12px !important; }
+            .text-\\[10px\\] { font-size: 10px !important; }
+            .text-\\[9px\\] { font-size: 9px !important; }
+            .border-b { border-bottom: 1px dashed #666666 !important; }
+            .pb-2 { padding-bottom: 8px !important; }
+            .pb-3 { padding-bottom: 12px !important; }
+            .pt-1 { padding-top: 4px !important; }
+            .space-y-0\\.5 > * + * { margin-top: 2px !important; }
+            .space-y-1 > * + * { margin-top: 4px !important; }
+            .space-y-1\\.5 > * + * { margin-top: 6px !important; }
+            .space-y-3 > * + * { margin-top: 12px !important; }
+            .flex { display: flex !important; }
+            .justify-between { justify-content: space-between !important; }
+          </style>
+        </head>
+        <body>
+          ${area.outerHTML}
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    }, 250);
   }
 
   public getWAReceiptLink(): string {

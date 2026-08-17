@@ -584,31 +584,127 @@ export class PrintLabelModalComponent implements OnInit {
 
   public printPage() {
     const area = document.querySelector('.printable-area');
-    if (!area) {
-      window.print();
-      return;
+    if (!area) return;
+
+    // Clean up any previous print iframe
+    const oldFrame = document.getElementById('cantika-label-print-frame') as HTMLIFrameElement;
+    if (oldFrame && oldFrame.parentNode) {
+      oldFrame.parentNode.removeChild(oldFrame);
     }
 
-    // Clean up any existing print mount node
-    const oldMount = document.getElementById('cantika-print-mount');
-    if (oldMount && oldMount.parentNode) {
-      oldMount.parentNode.removeChild(oldMount);
-    }
+    // Create isolated hidden print iframe
+    const iframe = document.createElement('iframe');
+    iframe.id = 'cantika-label-print-frame';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
 
-    // Mount printable sheet directly to document.body
-    const mount = document.createElement('div');
-    mount.id = 'cantika-print-mount';
-    mount.appendChild(area.cloneNode(true));
-    document.body.appendChild(mount);
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
 
-    // Trigger browser print
-    window.print();
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Cetak Label Tag Harga - Cantika Beauty Store</title>
+          <meta charset="utf-8">
+          <style>
+            @page {
+              margin: 6mm;
+              size: A4 portrait;
+            }
+            body {
+              background-color: #ffffff !important;
+              color: #000000 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .grid {
+              display: grid !important;
+            }
+            .grid-cols-3 {
+              grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+              gap: 12px !important;
+            }
+            .grid-cols-4 {
+              grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+              gap: 8px !important;
+            }
+            .printable-area {
+              width: 100% !important;
+              background: #ffffff !important;
+              box-sizing: border-box !important;
+            }
+            .word-tag-card, .iseller-label-card {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              break-inside: avoid-page !important;
+              -webkit-column-break-inside: avoid !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              text-align: center !important;
+              box-sizing: border-box !important;
+              background: #ffffff !important;
+              padding: 10px !important;
+              border-radius: 2px !important;
+            }
+            .word-tag-card {
+              border: 2px solid #000000 !important;
+              min-height: 140px !important;
+            }
+            .iseller-label-card {
+              border: 1px solid #000000 !important;
+              min-height: 105px !important;
+            }
+            .text-xs { font-size: 12px !important; line-height: 1.2 !important; }
+            .text-sm { font-size: 14px !important; line-height: 1.3 !important; }
+            .text-lg { font-size: 18px !important; line-height: 1.2 !important; }
+            .text-\\[10px\\] { font-size: 10px !important; }
+            .text-\\[11px\\] { font-size: 11px !important; }
+            .text-\\[9px\\] { font-size: 9px !important; }
+            .font-bold { font-weight: 700 !important; }
+            .font-black, .font-extrabold { font-weight: 900 !important; }
+            .font-mono { font-family: monospace !important; }
+            .uppercase { text-transform: uppercase !important; }
+            .line-through { text-decoration: line-through !important; }
+            .text-gray-400, .text-gray-500 { color: #6b7280 !important; }
+            .text-black { color: #000000 !important; }
+            .text-slate-600 { color: #475569 !important; }
+            .w-full { width: 100% !important; }
+            .border-b { border-bottom: 1px solid #e2e8f0 !important; }
+            .pb-2 { padding-bottom: 8px !important; }
+            .mb-2 { margin-bottom: 8px !important; }
+            .mt-0.5 { margin-top: 2px !important; }
+            .my-auto { margin-top: auto !important; margin-bottom: auto !important; }
+            .space-y-1 > * + * { margin-top: 4px !important; }
+            .break-words { overflow-wrap: break-word !important; word-break: break-word !important; }
+          </style>
+        </head>
+        <body>
+          ${area.outerHTML}
+        </body>
+      </html>
+    `);
+    doc.close();
 
-    // Clean up mount node after print dialog closes
     setTimeout(() => {
-      if (document.body.contains(mount)) {
-        document.body.removeChild(mount);
-      }
-    }, 600);
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    }, 250);
   }
 }
