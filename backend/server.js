@@ -127,8 +127,8 @@ async function connectAndSeedDatabase() {
       const count = await ProductModel.countDocuments();
       console.log(`[MONGO DB CHECK] Current product count in MongoDB Atlas: ${count}`);
 
-      if (count < 5000) {
-        console.log('Seeding MongoDB Atlas with all 5,182 products from assets...');
+      if (count === 0) {
+        console.log('Seeding MongoDB Atlas with products from assets...');
         const seedJsonPath = path.join(__dirname, '..', 'frontend', 'src', 'assets', 'products.json');
         if (fs.existsSync(seedJsonPath)) {
           const raw = fs.readFileSync(seedJsonPath, 'utf8');

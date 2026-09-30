@@ -102,10 +102,14 @@ export class ProductService {
       map(([products, filters]) => {
         return products
           .filter(p => {
-            const matchesSearch = filters.searchQuery === '' ||
-              p.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-              p.sku.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-              (p.barcode && p.barcode.includes(filters.searchQuery));
+            const q = filters.searchQuery.toLowerCase().trim();
+            const matchesSearch = q === '' ||
+              (p.name && p.name.toLowerCase().includes(q)) ||
+              (p.sku && p.sku.toLowerCase().includes(q)) ||
+              (p.vendor && p.vendor.toLowerCase().includes(q)) ||
+              (p.type && p.type.toLowerCase().includes(q)) ||
+              (p.collectionName && p.collectionName.toLowerCase().includes(q)) ||
+              (p.barcode && p.barcode.includes(q));
 
             const matchesVendor = filters.selectedVendor === 'ALL' || p.vendor === filters.selectedVendor;
             const matchesType = filters.selectedType === 'ALL' || p.type === filters.selectedType;
