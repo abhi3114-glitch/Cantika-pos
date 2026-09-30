@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const CSV_PATH = 'c:\\devjess\\all product.csv';
+const CSV_PATH = 'c:\\devjess\\product-5a93157eacab41d28ed08b45576d34ba.csv';
 const OUT_PATH = path.join(__dirname, '..', 'src', 'assets', 'products.json');
 
 function parseCSVLine(line) {

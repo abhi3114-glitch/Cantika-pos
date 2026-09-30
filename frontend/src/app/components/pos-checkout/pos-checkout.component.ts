@@ -88,6 +88,16 @@ export interface GroupedProductTile {
             >
               <span>{{ groupVariantsEnabled ? '✨ Varian Gabung' : '📋 Semua Varian' }}</span>
             </button>
+
+            <!-- Allow 0 Stock Toggle Button (User Option to still add to cart if 0 pcs) -->
+            <button
+              id="btn-toggle-zero-stock"
+              (click)="toggleAllowZeroStock()"
+              [class]="allowZeroStock ? 'px-3 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 font-black text-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs transition-all' : 'px-3 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium text-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-all'"
+              [title]="allowZeroStock ? 'Opsi Aktif: Produk stok 0 pcs langsung bisa ditambah ke nota' : 'Opsi Nonaktif: Klik untuk mengizinkan penjualan produk stok 0 pcs'"
+            >
+              <span>{{ allowZeroStock ? '⚡ Jual Stok 0: BISA' : '🔒 Jual Stok 0: OFF' }}</span>
+            </button>
           </div>
 
           <!-- Stock Limit Alert Banner -->
@@ -110,8 +120,8 @@ export interface GroupedProductTile {
                   <span *ngIf="tile.isGroup" class="px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-extrabold text-[9px] whitespace-nowrap border border-rose-200 dark:border-rose-900">
                     ✨ {{ tile.variants.length }} Varian
                   </span>
-                  <span *ngIf="!tile.isGroup" [class]="tile.totalStock === 0 ? 'text-rose-600 dark:text-rose-400 font-bold text-[9px]' : (tile.totalStock <= 2 ? 'text-amber-600 dark:text-amber-400 font-bold text-[9px]' : 'text-slate-400 dark:text-slate-500 text-[9px]')">
-                    {{ tile.totalStock === 0 ? 'Stok Habis' : (tile.totalStock + ' ' + tile.unit) }}
+                  <span *ngIf="!tile.isGroup" [class]="tile.totalStock === 0 ? 'px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-bold text-[9px] border border-amber-300 dark:border-amber-800' : (tile.totalStock <= 2 ? 'text-amber-600 dark:text-amber-400 font-bold text-[9px]' : 'text-slate-400 dark:text-slate-500 text-[9px]')">
+                    {{ tile.totalStock === 0 ? 'Stok 0 (Bisa Jual)' : (tile.totalStock + ' ' + tile.unit) }}
                   </span>
                 </div>
                 <h4 class="font-semibold text-slate-900 dark:text-slate-100 text-xs line-clamp-2 leading-tight group-hover:text-rose-800 dark:group-hover:text-rose-400 transition-colors">{{ tile.baseName }}</h4>
@@ -122,8 +132,8 @@ export interface GroupedProductTile {
                   <span *ngIf="tile.minPrice === tile.maxPrice">Rp {{ tile.minPrice.toLocaleString('id-ID') }}</span>
                   <span *ngIf="tile.minPrice !== tile.maxPrice">Rp {{ tile.minPrice.toLocaleString('id-ID') }} - {{ tile.maxPrice.toLocaleString('id-ID') }}</span>
                 </span>
-                <span [class]="tile.isGroup ? 'px-2 py-0.5 rounded-md bg-rose-900 text-white font-bold text-[10px]' : 'w-6 h-6 rounded-md bg-slate-900 dark:bg-slate-800 group-hover:bg-rose-800 text-white flex items-center justify-center font-bold text-xs shadow-xs transition-colors'">
-                  {{ tile.isGroup ? 'Pilih' : '+' }}
+                <span [class]="tile.isGroup ? 'px-2 py-0.5 rounded-md bg-rose-900 text-white font-bold text-[10px]' : (tile.totalStock === 0 ? 'px-2 py-0.5 rounded-md bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] shadow-xs' : 'w-6 h-6 rounded-md bg-slate-900 dark:bg-slate-800 group-hover:bg-rose-800 text-white flex items-center justify-center font-bold text-xs shadow-xs transition-colors')">
+                  {{ tile.isGroup ? 'Pilih' : (tile.totalStock === 0 ? '+ Tambah' : '+') }}
                 </span>
               </div>
             </div>
@@ -162,10 +172,13 @@ export interface GroupedProductTile {
                 <div class="font-bold text-slate-900 dark:text-white line-clamp-1 text-[11px]">
                   {{ getFormattedProductName(item.product) }}
                 </div>
-                <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1.5 mt-0.5 flex-wrap">
                   <span>SKU: {{ item.product.sku }}</span>
                   <span *ngIf="getVariantShadeName(item.product)" class="px-1.5 py-0.2 rounded bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 font-bold font-sans text-[9px] border border-rose-200 dark:border-rose-900">
                     {{ getVariantShadeName(item.product) }}
+                  </span>
+                  <span *ngIf="item.product.stock <= 0" class="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-bold font-sans text-[9px] border border-amber-300 dark:border-amber-800">
+                    ⚠️ Stok 0
                   </span>
                 </div>
                 <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
@@ -386,8 +399,13 @@ export interface GroupedProductTile {
               <div class="font-mono font-black text-rose-700 dark:text-rose-400 text-xs">
                 Rp {{ item.product.price.toLocaleString('id-ID') }}
               </div>
-              <div [class]="item.product.stock === 0 ? 'text-[10px] font-bold text-rose-600' : 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400'">
-                {{ item.product.stock === 0 ? 'Stok Habis' : 'Stok: ' + item.product.stock + ' ' + item.product.unit }}
+              <div class="flex items-center gap-1.5 justify-end">
+                <span [class]="item.product.stock === 0 ? 'text-[10px] font-bold text-amber-600 dark:text-amber-400' : 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400'">
+                  {{ item.product.stock === 0 ? 'Stok 0' : 'Stok: ' + item.product.stock + ' ' + item.product.unit }}
+                </span>
+                <span *ngIf="item.product.stock === 0" class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[9px] shadow-xs">
+                  + Tetap Tambah
+                </span>
               </div>
             </div>
           </div>
@@ -400,6 +418,50 @@ export interface GroupedProductTile {
           </button>
         </div>
 
+      </div>
+    </div>
+
+    <!-- Zero-Stock Confirmation Modal Popup -->
+    <div *ngIf="pendingZeroStockProduct" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/80 text-slate-900 dark:text-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-lg border border-amber-200 dark:border-amber-800 shrink-0">
+            ⚠️
+          </div>
+          <div>
+            <h3 class="text-sm font-bold font-heading text-slate-900 dark:text-white">Konfirmasi Produk Stok 0</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Produk ini memiliki 0 pcs di sistem inventaris</p>
+          </div>
+        </div>
+
+        <div class="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-900 text-xs space-y-1">
+          <div class="font-bold text-slate-900 dark:text-amber-200 text-xs">{{ getFormattedProductName(pendingZeroStockProduct) }}</div>
+          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">SKU: {{ pendingZeroStockProduct.sku }} | Harga: Rp {{ pendingZeroStockProduct.price.toLocaleString('id-ID') }}</div>
+          <div class="text-[11px] text-amber-800 dark:text-amber-300 font-medium pt-1">Apakah Anda tetap ingin memasukkan produk ini ke keranjang penjualan?</div>
+        </div>
+
+        <div class="space-y-2 pt-1">
+          <button
+            (click)="confirmAddPendingZeroStock(false)"
+            class="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+          >
+            <span>+ Tetap Tambah ke Keranjang (1x Ini)</span>
+          </button>
+
+          <button
+            (click)="confirmAddPendingZeroStock(true)"
+            class="w-full py-2.5 px-3 rounded-xl bg-slate-900 dark:bg-rose-950 text-white hover:bg-slate-800 dark:hover:bg-rose-900 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+          >
+            <span>⚡ Tetap Tambah & Selalu Izinkan Stok 0</span>
+          </button>
+
+          <button
+            (click)="cancelPendingZeroStock()"
+            class="w-full py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs cursor-pointer transition-colors"
+          >
+            Batal
+          </button>
+        </div>
       </div>
     </div>
 
@@ -439,6 +501,8 @@ export class PosCheckoutComponent implements OnInit {
   public transactionNumber = `POS-${Date.now().toString().slice(-6)}`;
   public lastSale: SaleTransaction | null = null;
   public stockAlertMessage = '';
+  public allowZeroStock = true;
+  public pendingZeroStockProduct: Product | null = null;
 
   constructor(
     private productService: ProductService,
@@ -450,6 +514,12 @@ export class PosCheckoutComponent implements OnInit {
 
   ngOnInit() {
     this.loadSavedCart();
+    if (typeof localStorage !== 'undefined') {
+      const savedZero = localStorage.getItem('cantika_pos_allow_zero_stock');
+      if (savedZero !== null) {
+        this.allowZeroStock = savedZero === 'true';
+      }
+    }
     this.productService.products$.subscribe(prods => {
       this.allProducts = prods;
       this.filterProducts();
@@ -514,9 +584,9 @@ export class PosCheckoutComponent implements OnInit {
         return nameMatch || skuMatch || barcodeMatch || vendorMatch || typeMatch;
       });
 
-      // Barcode Scanner Auto-Add if exact barcode match AND in stock!
+      // Barcode Scanner Auto-Add if exact barcode match (allows 0-stock items with system notice)
       const exactBarcode = this.allProducts.find(p => p && p.barcode && p.barcode.toLowerCase() === q);
-      if (exactBarcode && exactBarcode.stock > 0 && q.length >= 8) {
+      if (exactBarcode && q.length >= 8) {
         this.addToCart(exactBarcode);
         this.searchTerm = '';
         this.filterProducts();
@@ -763,12 +833,48 @@ export class PosCheckoutComponent implements OnInit {
     return '';
   }
 
-  public addToCart(product: Product) {
+  public toggleAllowZeroStock() {
+    this.allowZeroStock = !this.allowZeroStock;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('cantika_pos_allow_zero_stock', String(this.allowZeroStock));
+    }
+    this.stockAlertMessage = this.allowZeroStock
+      ? '⚡ Opsi Diaktifkan: Produk stok 0 pcs sekarang langsung BISA ditambahkan ke keranjang & nota.'
+      : '🔒 Opsi Dinonaktifkan: Penjualan produk stok 0 pcs dibatasi (akan konfirmasi sebelum tambah).';
+    setTimeout(() => this.stockAlertMessage = '', 4500);
+  }
+
+  public confirmAddPendingZeroStock(alwaysAllow = false) {
+    if (this.pendingZeroStockProduct) {
+      if (alwaysAllow) {
+        this.allowZeroStock = true;
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('cantika_pos_allow_zero_stock', 'true');
+        }
+      }
+      const prod = this.pendingZeroStockProduct;
+      this.pendingZeroStockProduct = null;
+      this.addToCart(prod, true);
+    }
+  }
+
+  public cancelPendingZeroStock() {
+    this.pendingZeroStockProduct = null;
+  }
+
+  public addToCart(product: Product, forceZeroStock = false) {
     if (!product) return;
 
     // Fresh product instance resolution
     const latestProd = this.allProducts.find(p => p.id === product.id) || product;
     const formattedName = this.getFormattedProductName(latestProd);
+
+    // If product is 0 stock, check allowZeroStock option
+    if (latestProd.stock <= 0 && !this.allowZeroStock && !forceZeroStock) {
+      this.selectedGroupForVariantModal = null;
+      this.pendingZeroStockProduct = latestProd;
+      return;
+    }
 
     // Create item product snapshot with full descriptive variant name
     const productSnapshot: Product = {
@@ -784,13 +890,13 @@ export class PosCheckoutComponent implements OnInit {
       existing.quantity = nextQty;
       existing.product.name = formattedName; // Refresh formatted name
       if (nextQty > latestProd.stock) {
-        this.stockAlertMessage = `⚠️ System Stock Notice: "${formattedName}" quantity (${nextQty}) exceeds recorded system stock (${latestProd.stock} ${latestProd.unit}). Item added to sale.`;
+        this.stockAlertMessage = `⚠️ Opsi Jual Stok 0: "${formattedName}" jumlah (${nextQty}) melebihi stok sistem (${latestProd.stock} ${latestProd.unit}). Tetap masuk nota.`;
         setTimeout(() => this.stockAlertMessage = '', 4000);
       }
     } else {
       this.cart.push({ product: productSnapshot, quantity: 1 });
       if (latestProd.stock <= 0) {
-        this.stockAlertMessage = `⚠️ System Stock Notice: "${formattedName}" has 0 recorded stock in system. Added to Current Sale.`;
+        this.stockAlertMessage = `⚠️ Opsi Jual Stok 0: "${formattedName}" memiliki 0 stok di sistem. Berhasil ditambahkan ke Nota Penjualan!`;
         setTimeout(() => this.stockAlertMessage = '', 4000);
       }
     }

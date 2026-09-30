@@ -108,7 +108,7 @@ export class ProductService {
               (p.sku && p.sku.toLowerCase().includes(q)) ||
               (p.vendor && p.vendor.toLowerCase().includes(q)) ||
               (p.type && p.type.toLowerCase().includes(q)) ||
-              (p.collectionName && p.collectionName.toLowerCase().includes(q)) ||
+              (p.collection && p.collection.toLowerCase().includes(q)) ||
               (p.barcode && p.barcode.includes(q));
 
             const matchesVendor = filters.selectedVendor === 'ALL' || p.vendor === filters.selectedVendor;
